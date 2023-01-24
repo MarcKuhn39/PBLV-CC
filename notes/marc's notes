@@ -1,0 +1,42 @@
+Links:
+How to deploy websites for free with github: https://www.youtube.com/watch?v=K84nR0A_JJc
+Link on to the website template: https://github.com/learning-zone/website-templates/tree/master/stylish-bootstrap-coming-soon-template
+music: https://www.youtube.com/watch?v=f02mOEt11OQ
+tutorial for ChartJS: https://www.youtube.com/watch?v=yD3kXXJTqsc
+
+Programmierung in Python
+Bibliothek für Webserver
+Domäne
+Flask (making your first dynamic website with flask)
+Frontend Framework (Vue)
+
+Dastellung (website) und fetch skript
+- funktionsfähiges ein und auslesen der funktionen
+Serverskript für die API die Daten zurückschicken kann bei Fetchrequest
+Webseitenskript das sich regelmäßig einen neuen Fetchrequest stellt an API und zeigt
+statisches Update seitens des Servers statt clientseitig
+Statistikanzeige // Peaktime Anzeige, Low Time Anzeige
+
+chartjs - anzeige der stündlichen aktivität
+
+Meine Aufgaben: Darstellung der Daten und Webseite
+ - Technologien: ChartJS, Python, JS, CSV, Flask, 
+ - Webseitenskript schreiben in Python
+ - Webseite schreiben in JS
+ - Webseite publishen (oder localhost)
+
+
+
+Technologies used for this project:
+ - Javascript, Python
+ - CSV, HTML, CSS
+ - Flask, ChartJS, CC-API
+
+Tasks for this project
+ - 1. publish a website
+ - 2. create a html file with the shown layout 
+ - 3. integrate chartJS API
+ - 4. Read test CSV-Files
+ - 5. 
+
+ 

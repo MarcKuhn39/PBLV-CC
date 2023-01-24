@@ -9,3 +9,8 @@ Responsibilities:
  - Frontend (Website puclication, data visualization, using API for ChartJS)
 
 Every Team member handles one of these areas as their responsibility
+
+Here is a link to the template website: [live example](https://learning-zone.github.io/website-templates/stylish-bootstrap-coming-soon-template/)|					
+
+Here will be the link to the functioning website: ...
+
