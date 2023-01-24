@@ -6,6 +6,6 @@ The topic is a cafeteria counter (CC) that counts the amount of current guests v
 Responsibilities:
  - Hardware Enrolling
  - Backend (Registering new Inputs, incrementing/decrementing, API)
- - Frontend (Website puclication, data visualization, using API for ChartJS)
+ - Frontend (Website publication, data visualization, using API for ChartJS)
 
 Every Team member handles one of these areas as their responsibility
