@@ -1,109 +1,239 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafeteria Counter HM</title>
+    <!-- Bootstrap Integration -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
 
-    <head>
+    <!-- Material Light Integration -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
 
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Stylish - Bootstrap Coming Soon Template</title>
+    <!-- integrating style.css (for background)-->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/thermometer.css">
 
-        <!-- CSS -->
-        <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:400,300,100,100italic,300italic,400italic,700,700italic">
-        
-        <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
-        <link rel="stylesheet" href="assets/css/animate.css">
-        <link rel="stylesheet" href="assets/css/style.css">
+</head>
 
-        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-        <!--[if lt IE 9]>
-            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-        <![endif]-->
+<body>
+     <!-- This is the Heading Line -->
+     <div style="text-align: center;">
+        <h1 class="white-text">
+            Cafeteria Counter
+            <small>der Hochschule München</small>
+        </h1>
+     </div>
 
-		<!-- Font Awesome -->
-		<link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet"> 
-    </head>
+     <!-- This is the Container -->
+     <div class="container">
+        <div class="row g-5 row-cols-1 row-cols-md-2">
 
-    <body>
+        <!-- This is the left card -->
+            <div class="card shadow-sm">
 
-        <!-- Coming Soon -->
-        <div class="coming-soon">
-            <div class="inner-bg">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-sm-12">
-                        	<div class="logo wow fadeInDown">
-                        		<h1>
-                        			<a href="">Erine - Bootstrap Coming Soon Template</a>
-                        		</h1>
-                        	</div>
-                            <h2 class="wow fadeInDown">We're Getting <strong>READY!</strong></h2>
-                            <div class="timer wow fadeInUp">
-                                <div class="days-wrapper">
-                                    <span class="days"></span> <br>days
-                                </div> 
-                                <div class="hours-wrapper">
-                                    <span class="hours"></span> <br>hours
-                                </div> 
-                                <div class="minutes-wrapper">
-                                    <span class="minutes"></span> <br>minutes
-                                </div> 
-                                <div class="seconds-wrapper">
-                                    <span class="seconds"></span> <br>seconds
-                                </div>
-                            </div>
-                            <div class="wow fadeInDown">
-                            	<p>
-                            		We will back with something amazing which you love it. To get latest updates about our site please sign up to our newsletter.
-                            	</p>
-                            </div>
-                            <div class="subscribe wow fadeInDown">
-			                    <form class="form-inline" action="" method="post">
-			                        <input type="text" name="email" placeholder="Enter your email..." class="subscribe-email">
-			                        <button type="submit" class="btn">Subscribe</button>
-			                    </form>
-			                    <div class="success-message"></div>
-			                    <div class="error-message"></div>
-			                </div>
+                <!-- This is the title -->
+                <h2 class="card-title">Mensa Auslastung</h2>
+
+                <!-- This is the thermometer -->
+                <section class="container">
+                    <div class="logo">
+                        <div class="bar" style="--thermometer-value: 200px;">
+                            <div class="circle"></div>
                         </div>
                     </div>
+                </section>
+
+                <!-- This is the counter for available Seats -->
+                <h3>Plätze übrig: 140</h3>
+
+                <!-- This is the estimated waiting time -->
+                <div class="row row-cols-2 ">
+                    <img class= "clock-downsizer" src="assets/img/goldenclock.png" width="40" height= "auto">
+                        <h3>Wartezeit: 6 min.</h3>
                 </div>
             </div>
+
+
+            
+        <!-- This is the right card -->
+            <div class="card shadow-sm">
+
+                <!-- This is the first title -->
+                <h2 class="card-title">Stündlicher Besuch</h2>
+
+                <!-- This is the daily chart in chartjs-->
+                <div>
+                    <canvas id="myDailyChart" width="400", height="250"></canvas>
+                </div>
+
+                <!-- This is the second title -->
+                <h2 class="card-title">Wochenverlauf</h2>
+
+                <!-- This is the weekly chart -->
+                    <div>
+                        <canvas id="myWeekChart" width="400", height="250"></canvas>
+                    </div>
+            </div>
         </div>
-        
-        <!-- Footer -->
-        <footer>
-	        <div class="container">
-	            <div class="row">
-	                <div class="col-sm-7 footer-copyright">
-	                    <p>Copyright 2015 | All Rights Reserved - Template by  <a href="http://webthemez.com">WebThemez.com</a></p>
-	                </div>
-	                <div class="col-sm-5 footer-social pull-right">
-	                	<ul class="social-icon">
-								<li><a href=""><i class="fa fa-linkedin-square"></i></a></li>
-								<li><a href=""><i class="fa fa-facebook-square"></i></a></li>
-								<li><a href=""><i class="fa fa-twitter-square"></i></a></li>
-								<li><a href=""><i class="fa fa-youtube-square"></i></a></li>
-							</ul> 
-	                </div>
-	            </div>
-	        </div>
-        </footer>
+    </div>
+
+    <!-- create a button that changes css properties -->
+    <div class="browser-support">
+        <div class="background"></div>
+        <div class="title-container">
+            <h1 class="title">--CSS. variables
+                <span>and JavaScript</span>
+            </h1>
+            <p class="episode-number">6</p>
+        </div>
+        <input type="color">
+        <button>Green!</button>
+    </div>
+      
 
 
-        <!-- Javascript -->
-        <script src="assets/js/jquery-1.10.2.min.js"></script>
-        <script src="assets/js/jquery.backstretch.min.js"></script>
-        <script src="assets/js/jquery.countdown.min.js"></script>
-        <script src="assets/js/wow.min.js"></script>
-        <script src="assets/js/scripts.js"></script>
-        
-        <!--[if lt IE 10]>
-            <script src="assets/js/placeholder.js"></script>
-        <![endif]-->
+<!-------------------------------------------- This section contains the Javascript Part ---------------------------------------------------->
+      
+      <!-- integrate chartJS -->
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    </body>
+      <!-- this is the code for the daily chart -->
+      <script>
+        const ctxdaily = document.getElementById('myDailyChart');
+      
+        new Chart(ctxdaily, {
+          type: 'line',
+          data: {
+            labels: ['11 Uhr', '11.30 Uhr', '12 Uhr' , '12.30 Uhr', '13 Uhr', '11.30 Uhr', '14 Uhr'],
+            datasets: [{
+              label: '# Amount of Visitors',
+              data: [40, 420, 370, 350, 340, 270, 120],
+              backgroundColor: [
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(255, 102, 255, 0.7)',
+                'rgba(100, 232, 145, 0.7)',
+                'rgba(255, 162, 75, 0.7)'
+              ],
+              borderColor: [
+              'rgba(255, 99, 132, 0.9)',
+                'rgba(54, 162, 235, 0.9)',
+                'rgba(255, 206, 86, 0.9)',
+                'rgba(75, 192, 192, 0.9)',
+                'rgba(255, 102, 255, 0.9)',
+                'rgba(100, 232, 145, 0.7)'
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      </script>
+      
+      <!-- this is the code for the week chart -->
+      <script>
+// Fetch weather data from API
+        fetch("https://openweathermap.org/api")
+        .then(response => response.json())
+        .then(data => {
+            // Extract temperature data for Monday to Friday
+            var temperatureData = data.temperatures;
+            var mondayTemp = temperatureData.Monday;
+            var tuesdayTemp = temperatureData.Tuesday;
+            var wednesdayTemp = temperatureData.Wednesday;
+            var thursdayTemp = temperatureData.Thursday;
+            var fridayTemp = temperatureData.Friday;})
 
+            console.log(temperatureData);
+            console.log(tuesdayTemp);
+
+        const ctx = document.getElementById('myWeekChart');
+      
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+            datasets: [{
+              label: '# Peak Value',
+              data: [2, 2, 321, 69, 39],
+              backgroundColor: [
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(255, 102, 255, 0.7)',
+                'rgba(100, 232, 145, 0.7)'
+              ],
+              borderColor: [
+              'rgba(255, 99, 132, 0.9)',
+                'rgba(54, 162, 235, 0.9)',
+                'rgba(255, 206, 86, 0.9)',
+                'rgba(75, 192, 192, 0.9)',
+                'rgba(255, 102, 255, 0.9)',
+                'rgba(100, 232, 145, 0.7)'
+              ],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true
+              }
+            }
+          }
+        });
+      </script>
+
+      <!-- this is the code that makes an interactive button that changes css propertiers -->
+      <script>
+        const Input = document.querySelector('input[type=color]')
+        const colorButton = document.querySelector('button')
+        const colorVariable = '--yellow';
+
+        colorButton.addEventListener('click', _ => {
+            document.documentElement.style.setProperty(colorVariable, 'green')
+        })
+      </script>
+
+    <!-- this code fetches data from an api, saves it in a variable and writes it on to the console log -->
+      <script>
+        fetch("https://api.example.com/data")
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            // data is the API response in json format
+            var myData = data;
+            console.log(myData);
+
+            async function getData() {
+                try {
+                    const response = await fetch("https://api.example.com/data");
+                    const data = await response.json();
+                    var myData = data;
+                    console.log(myData);
+                } catch (error) {
+                    console.error("Error fetching data: " + error);
+                }
+            }
+
+            getData();
+  });
+      </script>
+            
+</body>
 </html>
