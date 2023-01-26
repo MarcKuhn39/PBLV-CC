@@ -2,6 +2,7 @@ import time
 import datetime
 import csv
 import serial
+import pandas as pd
 
 # from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -11,9 +12,6 @@ WEEKLY_FILE_PATH = "weekly_test.txt"
 
 COUNTER_LIMIT_MIN = 0
 COUNTER_LIMIT_MAX = 400
-
-MIN_TIME = "11:00:00"
-MAX_TIME = "14:00:00"
 
 WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday")
 
@@ -25,45 +23,56 @@ def run():
     core = Core(ser)
     core.write_current_counter()
 
-    # reset counters for next interval
-    core.reset_counters()
-
 
 class Core:
     def __init__(self, ser):
         self.ser = ser
         self.current_counter = 0
         self.max_counter = 0
+        self.events = pd.DataFrame(columns=["time", "port"], index=[0])
 
     def write_current_counter(self):
-        i = 0
-        # update current values continuesly
-        # limit number of activations for testing purposes
-        while i < 100:
+        with open(CURRENT_FILE_PATH, "w", encoding="Ascii") as current_file:
+            i = 0
+            # update current values continuesly
+            # limit number of activations for testing purposes
+            while i < 10:
 
-            if self.ser.in_waiting > 0:
-                serial_data = ""
-                serial_data = self.ser.readline()
+                if self.ser.in_waiting > 0:
+                    serial_data = ""
+                    serial_data = self.ser.readline()
 
-                match self.extract_from_serial(serial_data):
-                    case "PORT0":
-                        self.increment_counter()
-                    case "PORT1":
-                        self.increment_counter()
-                    case "PORT2":
-                        self.increment_counter()
-                    case _:
-                        # ignore
-                        pass
+                    match self.extract_from_serial(serial_data):
+                        case "PORT0":
+                            self.increment_counter()
+                            self.add_event(0)
+                        case "PORT1":
+                            self.increment_counter()
+                            self.add_event(1)
+                        case "PORT2":
+                            self.increment_counter()
+                            self.add_event(2)
+                        case _:
+                            # ignore
+                            pass
 
-                # overwrite current values
-                with open(CURRENT_FILE_PATH, "w", encoding="Ascii") as f:
+                    # overwrite current values
                     estimated_queue_time = 0
                     line = f"{self.current_counter}\n{estimated_queue_time}"
-                    f.write(line)
+                    current_file.write(line)
+                    current_file.flush()
+                    i = i + 1
 
-                i = i + 1
                 time.sleep(0.1)
+
+            # dump data for one day
+            print(self.events)
+            self.reset_counters()
+
+    def add_event(self, port_number):
+        timestamp = datetime.datetime.now()
+        row = pd.Series({"time": timestamp, "port": port_number})
+        self.events = pd.concat([self.events, row.to_frame().T], ignore_index=True)
 
     def extract_from_serial(self, data):
         return data.decode("Ascii").rstrip("\n")
