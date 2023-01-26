@@ -64,3 +64,7 @@ def read_weekly_values():
         for line in weekly_reader:
             weekly_values.append(line)
         return weekly_values
+
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=5000, debug=False)
