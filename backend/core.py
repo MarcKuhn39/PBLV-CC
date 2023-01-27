@@ -3,11 +3,11 @@ import datetime
 import csv
 import sys
 import os
+import threading
 from decouple import config
+from apscheduler.schedulers.blocking import BlockingScheduler
 import serial
 import pandas as pd
-
-# from apscheduler.schedulers.blocking import BlockingScheduler
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 CURRENT_FILE_PATH = os.path.join(PATH, "current_test.txt")
@@ -22,27 +22,50 @@ WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday")
 ARDUINO_PORT = "ARDUINO_PORT"
 
 
-def run():
+def init_and_start_core():
     port = config(ARDUINO_PORT)
     ser = serial.Serial(port=port, baudrate=9600, timeout=None)
     core = Core(ser)
-    core.write_current_counter()
+    core.start()
+
+    scheduler = BlockingScheduler()
+    scheduler.add_job(
+        core.thread_event.set, trigger="cron", day_of_week="mon-fri", hour=0
+    )
+    scheduler.start()
 
 
-class Core:
+class Core(threading.Thread):
     def __init__(self, ser):
+        threading.Thread.__init__(self)
         self.ser = ser
         self.current_counter = 0
         self.max_counter = 0
         self.events = []
+        self.thread_event = threading.Event()
+
+    def run(self):
+        while True:
+            # start write for current day
+            self.write_current_counter()
+
+            # dump data for one day
+            df = pd.DataFrame(self.events, columns=["time", "port"])
+            print(df)
+
+            # write for last day has finished
+            self.reset_state()
 
     def write_current_counter(self):
         with open(CURRENT_FILE_PATH, "w", encoding="Ascii") as current_file:
-            i = 0
             # update current values continuesly
             # read from standard in for testing purposes
             for line in sys.stdin:
 
+                if self.thread_event.is_set():
+                    break
+
+                # if self.ser.in_waiting > 0:
                 if True:
                     serial_data = ""
                     # serial_data = self.ser.readline()
@@ -68,14 +91,8 @@ class Core:
                             # ignore
                             pass
 
-                    i = i + 1
-
                 time.sleep(0.1)
 
-            # dump data for one day
-            df = pd.DataFrame(self.events, columns=["time", "port"])
-            print(df)
-            self.reset_counters()
             current_file.close()
 
     def write_values(self, current_file):
@@ -112,19 +129,11 @@ class Core:
         )
         self.current_counter = updated_counter
 
-    def reset_counters(self):
+    def reset_state(self):
         self.current_counter = 0
         self.max_counter = 0
-
-
-def get_max_per_day():
-    with open(DAILY_FILE_PATH, mode="r", encoding="Ascii") as daily_file:
-        daily_reader = csv.DictReader(daily_file, fieldnames=["hour", "count"])
-        max_count = 0
-        for line in daily_reader:
-            count = line["count"]
-            max_count = max(count, max_count)
-        return max_count
+        self.events = []
+        self.thread_event.clear()
 
 
 def get_current_day():
@@ -134,5 +143,5 @@ def get_current_day():
 
 if __name__ == "__main__":
     print("Core started")
-    run()
+    init_and_start_core()
     print("Core stopped")
