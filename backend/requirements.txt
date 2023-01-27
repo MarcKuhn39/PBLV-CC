@@ -1,1 +1,4 @@
 Flask==2.2.2
+pandas==1.5.3
+pyserial==3.5
+python-decouple==3.7
