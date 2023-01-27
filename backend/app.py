@@ -1,13 +1,17 @@
-from flask import Flask, jsonify
+import os
 import csv
+from flask import Flask, jsonify
+
 
 # Creates a REST API which provides the current number of customers present and the estimated
 # queue time as well as daily and weekly summaries.
 
 app = Flask(__name__)
-CURRENT_FILE_PATH = "current.txt"
-DAILY_FILE_PATH = "daily.txt"
-WEEKLY_FILE_PATH = "weekly.txt"
+
+PATH = os.path.dirname(os.path.abspath(__file__))
+CURRENT_FILE_PATH = os.path.join(PATH, "current.txt")
+DAILY_FILE_PATH = os.path.join(PATH, "daily.txt")
+WEEKLY_FILE_PATH = os.path.join(PATH, "weekly.txt")
 
 
 @app.get("/")

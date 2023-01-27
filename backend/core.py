@@ -1,24 +1,29 @@
 import time
 import datetime
 import csv
+import sys
+import os
+from decouple import config
 import serial
 import pandas as pd
 
 # from apscheduler.schedulers.blocking import BlockingScheduler
 
-CURRENT_FILE_PATH = "current_test.txt"
-DAILY_FILE_PATH = "daily_test.txt"
-WEEKLY_FILE_PATH = "weekly_test.txt"
+PATH = os.path.dirname(os.path.abspath(__file__))
+CURRENT_FILE_PATH = os.path.join(PATH, "current_test.txt")
+DAILY_FILE_PATH = os.path.join(PATH, "daily_test.txt")
+WEEKLY_FILE_PATH = os.path.join(PATH, "weekly_test.txt")
 
 COUNTER_LIMIT_MIN = 0
 COUNTER_LIMIT_MAX = 400
 
 WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday")
 
+ARDUINO_PORT = "ARDUINO_PORT"
+
 
 def run():
-    # minimal example which only updates the current values
-    port = "COM3"  # needs to be configured, device dependant
+    port = config(ARDUINO_PORT)
     ser = serial.Serial(port=port, baudrate=9600, timeout=None)
     core = Core(ser)
     core.write_current_counter()
@@ -29,50 +34,62 @@ class Core:
         self.ser = ser
         self.current_counter = 0
         self.max_counter = 0
-        self.events = pd.DataFrame(columns=["time", "port"], index=[0])
+        self.events = []
 
     def write_current_counter(self):
         with open(CURRENT_FILE_PATH, "w", encoding="Ascii") as current_file:
             i = 0
             # update current values continuesly
-            # limit number of activations for testing purposes
-            while i < 10:
+            # read from standard in for testing purposes
+            for line in sys.stdin:
 
-                if self.ser.in_waiting > 0:
+                if True:
                     serial_data = ""
-                    serial_data = self.ser.readline()
+                    # serial_data = self.ser.readline()
+                    serial_data = line.rstrip()
 
-                    match self.extract_from_serial(serial_data):
+                    # match self.extract_from_serial(serial_data):
+                    match serial_data:
                         case "PORT0":
                             self.increment_counter()
                             self.add_event(0)
+                            self.write_values(current_file)
                         case "PORT1":
                             self.increment_counter()
                             self.add_event(1)
+                            self.write_values(current_file)
                         case "PORT2":
                             self.increment_counter()
                             self.add_event(2)
+                            self.write_values(current_file)
+                        case "EXIT":
+                            break
                         case _:
                             # ignore
                             pass
 
-                    # overwrite current values
-                    estimated_queue_time = 0
-                    line = f"{self.current_counter}\n{estimated_queue_time}"
-                    current_file.write(line)
-                    current_file.flush()
                     i = i + 1
 
                 time.sleep(0.1)
 
             # dump data for one day
-            print(self.events)
+            df = pd.DataFrame(self.events, columns=["time", "port"])
+            print(df)
             self.reset_counters()
+            current_file.close()
+
+    def write_values(self, current_file):
+        estimated_queue_time = 0
+        line = f"{self.current_counter}\n{estimated_queue_time}"
+        current_file.seek(0)
+        current_file.write(line)
+        current_file.truncate()
+        current_file.flush()
 
     def add_event(self, port_number):
         timestamp = datetime.datetime.now()
-        row = pd.Series({"time": timestamp, "port": port_number})
-        self.events = pd.concat([self.events, row.to_frame().T], ignore_index=True)
+        row = [timestamp, port_number]
+        self.events.append(row)
 
     def extract_from_serial(self, data):
         return data.decode("Ascii").rstrip("\n")
@@ -113,16 +130,6 @@ def get_max_per_day():
 def get_current_day():
     day = datetime.date.today()
     return WEEKDAY[day.weekday]
-
-
-def create_timestamps():
-    timerange = range(660, 840, 30)
-    timestamps = []
-    for t in timerange:
-        timestamp = f"{t // 60}:{t % 60}:00"
-        timestamps.append(timestamp)
-
-    return timestamps
 
 
 if __name__ == "__main__":
