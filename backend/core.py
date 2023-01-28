@@ -1,23 +1,23 @@
 import time
 import datetime
-import csv
 import sys
 import os
 import threading
+from functools import reduce
 from decouple import config
 from apscheduler.schedulers.blocking import BlockingScheduler
 import serial
 import pandas as pd
 
 PATH = os.path.dirname(os.path.abspath(__file__))
-CURRENT_FILE_PATH = os.path.join(PATH, "current_test.txt")
-DAILY_FILE_PATH = os.path.join(PATH, "daily_test.txt")
-WEEKLY_FILE_PATH = os.path.join(PATH, "weekly_test.txt")
+CURRENT_FILE_PATH = os.path.join(PATH, "current.txt")
+DAILY_FILE_PATH = os.path.join(PATH, "daily.txt")
+WEEKLY_FILE_PATH = os.path.join(PATH, "weekly.txt")
 
 COUNTER_LIMIT_MIN = 0
 COUNTER_LIMIT_MAX = 400
 
-WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday")
+WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
 ARDUINO_PORT = "ARDUINO_PORT"
 
@@ -50,11 +50,74 @@ class Core(threading.Thread):
             self.write_current_counter()
 
             # dump data for one day
-            df = pd.DataFrame(self.events, columns=["time", "port"])
-            print(df)
+            current_day = pd.DataFrame(self.events, columns=["time", "port"])
+            current_day["time"] = pd.to_datetime(current_day["time"])
+
+            self.write_daily(current_day)
+            self.write_weekly()
 
             # write for last day has finished
             self.reset_state()
+
+    def write_daily(self, current_day: pd.DataFrame):
+        def change_counter(counter, port):
+            if port == 0:
+                return counter + 1
+            if port == 2:
+                return counter - 1
+            return counter
+
+        def customers_per_timespan(values):
+            return reduce(change_counter, values)
+
+        # only get events which occurred during opening hours
+        start = datetime.time(11, 0, 0)
+        end = datetime.time(14, 0, 0)
+        current_values = current_day[
+            (current_day["time"].dt.time >= start)
+            & (current_day["time"].dt.time <= end)
+        ]
+
+        # find number of customers at the end of timerange
+        timerange = pd.date_range(start="11:00:00", end="14:00:00", freq="30min")
+        current_values = (
+            current_values.groupby(pd.Grouper(key="time", freq="30min"))
+            .aggregate(customers_per_timespan)
+            .reindex(timerange)
+        )
+        current_values = current_values.transpose().reset_index(drop=True)
+        current_values = current_values.set_axis(
+            ["t1", "t2", "t3", "t4", "t5", "t6", "t7"], axis=1, copy=False
+        )
+
+        # read old values and extract days
+        old_values = pd.read_csv(DAILY_FILE_PATH, index_col=False)
+        old_day_count = old_values.iat[0, 0]
+        old_values = (old_values[old_values.columns[1:]] * old_day_count).reset_index(
+            drop=True
+        )
+
+        # add current values to old values
+        new_day_count = old_day_count + 1
+        new_values = old_values.add(current_values, fill_value=0).div(new_day_count)
+        new_values.insert(loc=0, column="day", value=new_day_count)
+        new_values.to_csv(DAILY_FILE_PATH, index=False)
+
+    def write_weekly(self):
+        # maybe just write down the day and the maximum per day for now
+        current_day = get_current_day()
+        max_per_day = self.max_counter
+
+        old_values = pd.read_csv(WEEKLY_FILE_PATH, index_col=False)
+        current_values = pd.DataFrame(
+            {
+                "date": [current_day[0]],
+                "weekday": [current_day[1]],
+                "count": [max_per_day],
+            },
+        )
+        new_values = pd.concat([old_values, current_values])
+        new_values.to_csv(WEEKLY_FILE_PATH, index=False)
 
     def write_current_counter(self):
         with open(CURRENT_FILE_PATH, "w", encoding="Ascii") as current_file:
@@ -73,16 +136,17 @@ class Core(threading.Thread):
 
                     # match self.extract_from_serial(serial_data):
                     match serial_data:
-                        case "PORT0":
+                        case "PORT0":  # customers entering cafeteria and queue
                             self.increment_counter()
                             self.add_event(0)
                             self.write_values(current_file)
-                        case "PORT1":
-                            self.increment_counter()
-                            self.add_event(1)
-                            self.write_values(current_file)
-                        case "PORT2":
-                            self.increment_counter()
+                        case "PORT1":  # customers leaving queue
+                            pass
+                            # self.increment_counter()
+                            # self.add_event(1)
+                            # self.write_values(current_file)
+                        case "PORT2":  # customers leaving cafeteria
+                            self.decrement_counter()
                             self.add_event(2)
                             self.write_values(current_file)
                         case "EXIT":
@@ -104,7 +168,7 @@ class Core(threading.Thread):
         current_file.flush()
 
     def add_event(self, port_number):
-        timestamp = datetime.datetime.now()
+        timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         row = [timestamp, port_number]
         self.events.append(row)
 
@@ -138,7 +202,7 @@ class Core(threading.Thread):
 
 def get_current_day():
     day = datetime.date.today()
-    return WEEKDAY[day.weekday]
+    return (day, WEEKDAY[day.weekday()])
 
 
 if __name__ == "__main__":

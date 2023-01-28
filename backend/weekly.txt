@@ -1,7 +1,7 @@
-monday,0
-tuesday,0
-wednesday,0
-thursday,0
-friday,0
-saturday,0
-sunday,0
+date,weekday,count
+1970-01-01,monday,0.0
+1970-01-01,tuesday,0.0
+1970-01-01,wednesday,0.0
+1970-01-01,thursday,0.0
+1970-01-01,friday,0.0
+2023-01-28,saturday,3.0

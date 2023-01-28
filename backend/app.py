@@ -1,6 +1,7 @@
 import os
-import csv
+import datetime
 from flask import Flask, jsonify
+import pandas as pd
 
 
 # Creates a REST API which provides the current number of customers present and the estimated
@@ -47,27 +48,34 @@ def create_curent_data():
 
 def create_full_data():
     current_data = create_curent_data()
-    max_per_day_stat = read_daily_values()
-    max_per_hour_stat = read_weekly_values()
+    max_per_day_stat = read_weekly_values()
+    max_per_hour_stat = read_daily_values()
     return (current_data, max_per_day_stat, max_per_hour_stat)
 
 
 def read_daily_values():
-    with open(DAILY_FILE_PATH, mode="r", encoding="Ascii") as daily_file:
-        daily_reader = csv.DictReader(daily_file, fieldnames=["hour", "count"])
-        daily_values = []
-        for line in daily_reader:
-            daily_values.append(line)
-        return daily_values
+    daily_values_df = pd.read_csv(DAILY_FILE_PATH, index_col=False)
+    daily_values = []
+    for column in daily_values_df.columns[1:]:
+        count = daily_values_df[column].to_list()[0]
+        value = {"hour": column, "count": count}
+        daily_values.append(value)
+
+    return daily_values
 
 
 def read_weekly_values():
-    with open(WEEKLY_FILE_PATH, mode="r", encoding="Ascii") as weekly_file:
-        weekly_reader = csv.DictReader(weekly_file, fieldnames=["day", "count"])
-        weekly_values = []
-        for line in weekly_reader:
-            weekly_values.append(line)
-        return weekly_values
+    weekly_values_df = pd.read_csv(WEEKLY_FILE_PATH, index_col=False)
+    weekly_values_df["date"] = pd.to_datetime(weekly_values_df["date"])
+    weekly_values_df = weekly_values_df[
+        weekly_values_df["date"].dt.isocalendar().week
+        == datetime.datetime.now().isocalendar().week
+    ]
+    weekly_values = []
+    for _, row in weekly_values_df.iterrows():
+        value = {"day": row["weekday"], "count": row["count"]}
+        weekly_values.append(value)
+    return weekly_values
 
 
 if __name__ == "__main__":
