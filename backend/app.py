@@ -1,6 +1,7 @@
 import os
 import datetime
 from flask import Flask, jsonify
+from flask_cors import CORS
 import pandas as pd
 
 
@@ -8,6 +9,7 @@ import pandas as pd
 # queue time as well as daily and weekly summaries.
 
 app = Flask(__name__)
+CORS(app)
 
 PATH = os.path.dirname(os.path.abspath(__file__))
 CURRENT_FILE_PATH = os.path.join(PATH, "current.txt")
@@ -79,4 +81,4 @@ def read_weekly_values():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(host="127.0.0.1", port=5000, debug=True)
