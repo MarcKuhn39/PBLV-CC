@@ -6,7 +6,7 @@ The backend consists of two components:
 It provides 3 endpoints:
 * `\`: Message to check if the backend is running
 * `current`: Json Response
-  ```json
+  ```javascript
   {
     "currentVisitorCount": number,
     "estimatedQueueTimeInMin": number
@@ -14,7 +14,7 @@ It provides 3 endpoints:
   ```
 
 * `full`: Json Response
-  ```json
+  ```javascript
     {
       "currentVisitorCount": number,
       "estimatedQueueTimeInMin": number,
@@ -32,7 +32,7 @@ and counts the number of customers present inside the cafeteria.
 Current values are saved to a file, which can be read by the REST API.
 
 __Note:__ In order for the core to be able to read from serial connection, the serial port needs to
-be specified in a .env file located in the backend folder. The port name needs to be assigned to  
+be specified in a [.env](https://pypi.org/project/python-decouple/#env-file) file located in the backend folder. The port name needs to be assigned to  
 an `ARDUINO_PORT=` environment variable.
 
 Executing `deploy_backend.bat` or `deploy_backend.sh` will install the necessary libraries and 
