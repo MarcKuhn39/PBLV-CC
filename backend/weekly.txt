@@ -1,7 +1,11 @@
 date,weekday,count
-1970-01-01,monday,0.0
-1970-01-01,tuesday,0.0
-1970-01-01,wednesday,0.0
-1970-01-01,thursday,0.0
-1970-01-01,friday,0.0
-2023-01-28,saturday,3.0
+2023-01-23,monday,200.0
+2023-01-24,tuesday,340.0
+2023-01-25,wednesday,240.0
+2023-01-26,thursday,270.0
+2023-01-27,friday,140.0
+2023-01-28,monday,200.0
+2023-01-29,tuesday,340.0
+2023-01-30,wednesday,240.0
+2023-01-31,thursday,270.0
+2023-02-01,friday,140.0
