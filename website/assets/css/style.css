@@ -10,6 +10,12 @@ html {
     --vistior-factor: 0.8;
 }
 
+
+.centered {
+  text-align: center;
+}
+
+
 body {
     height: 100%;
 
