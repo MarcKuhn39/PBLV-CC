@@ -42,7 +42,7 @@
                 <!-- This is the thermometer -->
                 <section class="container">
                     <div class="logo">
-                        <div class="bar" style="--thermometer-value: 200px;">
+                        <div id="barID" class="bar" style="--thermometer-value: 0px; --thermometer-current-color: #444444">
                             <div class="circle"></div>
                         </div>
                     </div>
@@ -55,7 +55,7 @@
                         .then(response => response.json())
                         .then(data => {
                             let currentVisitorCount = data.currentVisitorCount;
-                            document.getElementById("seats-free").innerHTML = `Plätze verfügbar: ${500 - currentVisitorCount}`;
+                            document.getElementById("seats-free").innerHTML = `In der Mensa: ${currentVisitorCount}`;
                         })
                         .catch(error => console.log(error));
                   </script>
@@ -80,7 +80,6 @@
                             text-align: center;
                           }
                           </style> <br>
-                      <button onclick="fetchData()"> Fetch Now</button>
             </div>
 
 
@@ -93,7 +92,7 @@
 
                 <!-- This is the daily chart in chartjs-->
                 <div>
-                    <canvas id="myDailyChart" width="400", height="250"></canvas>
+                    <canvas id="myDailyChart" width="400", height="300"></canvas>
                 </div>
 
                 <!-- This is the second title -->
@@ -101,7 +100,7 @@
 
                 <!-- This is the weekly chart -->
                     <div>
-                        <canvas id="myWeekChart" width="400", height="250"></canvas>
+                        <canvas id="myWeekChart" width="400", height="300"></canvas>
                     </div>
             </div>
         </div>
@@ -109,44 +108,56 @@
 
 
 <!-------------------------------------------- This section contains the Javascript Part ---------------------------------------------------->
-      
+      <!-- Hier findet der Fetch statt für Thermometer, Daily Chart und Week Chart -->
+
+      <script>
+        let maxCapacity = 250;
+        let barHeight = 360;
+        let element = document.getElementById("barID");
+          fetch("http://localhost:5000/full")
+            .then(response => response.json())
+            .then(data => {
+
+              // Hier wird das Thermometer erstellt
+              if (data.currentVisitorCount <= maxCapacity * 0.25) {
+                element.style.setProperty("--thermometer-current-color", "var(--thermometer-green)");
+              } else if (data.currentVisitorCount <= maxCapacity * 0.5) {
+                element.style.setProperty("--thermometer-current-color", "var(--thermometer-yellow)");
+              } else {
+                element.style.setProperty("--thermometer-current-color", "var(--thermometer-red)");
+                }
+                                                              // Anzahl der Leute aktuell * Pixelhöhe der Säule / Maximalkapazität
+                element.style.setProperty("--thermometer-value", data.currentVisitorCount*barHeight/maxCapacity + "px");
+                element.style.color = element.style.color;
+        });
+
+      </script>
+
+      <script>
+        let thermometerColor = document.getElementById("--thermometer-current-value");
+          fetch("http://localhost:5000/full")
+            .then(response => response.json())
+            .then(data => {
+        if (data.stats.maxPerHourStat[0].count <= 50) {
+          thermometerColor.style.setProperty("--thermometer-current-value", "thermometer-green");
+          console.log(thermometerColor)
+        } else if (data.value <= 75) {
+          myElement = "yellow";
+        } else {
+          myElement = "red";
+        }
+
+        console.log(myElement)
+      });
+
+      </script>
+
       <!-- integrate chartJS -->
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-      <!-- test code shows how you can fetch the currentVisitorCount from the API -->
-      <script>
-      fetch("http://localhost:5000/full")
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          const currentVisitorCount = data.currentVisitorCount;
-          console.log(currentVisitorCount);
-        })
-        .catch(error => console.log("Error: ", error));
-      </script>
-
-      <script>
-        async function fetchData() {
-          const url= 'http://localhost:5000/full';
-          const response = await fetch(url);
-          // wait until the request has been completed
-          const datapoints = await response.json();
-          console.log("here is how to fetch data" + datapoints);
-          return datapoints;
-        }
-      </script>
-
-      fetchData().then(datapoints => {
-        const = month = datapoints.maxStatPerHour
-      })
-
       <!-- this is the code for the daily chart -->
       <script>
-        let customData = []
+        let customDayData = []
 
           fetch("http://localhost:5000/full")
                   .then(response => {
@@ -156,36 +167,12 @@
                     return response.json();
                   })
                   .then(data => {
-                    // Here you can see how to fetch day data
-                    const t1 = data.stats.maxPerHourStat[0].count;
-                    console.log("Max Stat on 1.00 PM was: " + t1);
-                    customData.push(t1)
-                    console.log("customData[0] is: " + customData[0]);
-                    const t2 = data.stats.maxPerHourStat[1].count;
-                    console.log("Max Stat on 1.30 PM was: " + t2);
-                    customData.push(t2)
-                    console.log("customData[0] is: " + customData[1]);
-                    const t3 = data.stats.maxPerHourStat[2].count;
-                    console.log("Max Stat on 1.00 PM was: " + t3);
-                    customData.push(t3)
-                    console.log("customData[0] is: " + customData[2]);
-                    const t4 = data.stats.maxPerHourStat[3].count;
-                    console.log("Max Stat on 1.30 PM was: " + t4);
-                    customData.push(t4)
-                    console.log("customData[1] is: " + customData[3]);
-                    const t5 = data.stats.maxPerHourStat[4].count;
-                    console.log("Max Stat on 1.00 PM was: " + t5);
-                    customData.push(t5)
-                    console.log("customData[0] is: " + customData[4]);
-                    const t6 = data.stats.maxPerHourStat[5].count;
-                    console.log("Max Stat on 1.30 PM was: " + t6);
-                    customData.push(t6)
-                    console.log("customData[0] is: " + customData[5]);
-                    const t7 = data.stats.maxPerHourStat[6].count;
-                    console.log("Max Stat on 1.00 PM was: " + t7);
-                    customData.push(t7)
-                    console.log("customData[0] is: " + customData[6]);
                     
+                    for (let step = 0; step < 7; step++) {
+                      customDayData.push(data.stats.maxPerHourStat[step].count)
+                    }
+                    
+
                     // Create the chart
 
                     const ctxdaily = document.getElementById('myDailyChart');
@@ -193,10 +180,10 @@
                     new Chart(ctxdaily, {
                       type: 'line',
                       data: {
-                        labels: ['11 Uhr', '11.30 Uhr', '12 Uhr' , '12.30 Uhr', '13 Uhr', '11.30 Uhr', '14 Uhr'],
+                        labels: ['11 Uhr', '11.30 Uhr', '12 Uhr' , '12.30 Uhr', '13 Uhr', '13.30 Uhr', '14 Uhr'],
                         datasets: [{
                           label: '# Amount of Visitors',
-                          data: customData,
+                          data: customDayData,
                           backgroundColor: [
                             'rgba(255, 99, 132, 0.7)',
                             'rgba(54, 162, 235, 0.7)',
@@ -235,29 +222,31 @@
       
       <!-- this is the code for the week chart -->
       <script>
-          fetch("http://localhost:5000/full")
-                  .then(response => {
-                    if (!response.ok) {
-                      throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                  })
-                  .then(data => {
-                    // Here you can see how to fetch day data
-                    const mondayValue = data.stats.maxPerHourStat[0].count;
-                    console.log("Max stat on monday was: " + mondayValue);
-                  })
-                  .catch(error => console.log("Error: ", error));
+        let customWeekData = []
 
+fetch("http://localhost:5000/full")
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          
+          for (let step = 0; step < 5; step++) {
+            customWeekData.push(data.stats.maxPerDayStat[step].count)
+          }
+          console.log(customWeekData)
+
+                  // create the chart
         const ctx = document.getElementById('myWeekChart');
-      
         new Chart(ctx, {
           type: 'bar',
           data: {
             labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
             datasets: [{
               label: '# Peak Value',
-              data: [2, 2, 321, 69, 39],
+              data: customWeekData,
               backgroundColor: [
                 'rgba(255, 99, 132, 0.7)',
                 'rgba(54, 162, 235, 0.7)',
@@ -285,8 +274,9 @@
             }
           }
         });
+        })
+        .catch(error => console.log("Error: ", error));
       </script>
-
 
             
 </body>

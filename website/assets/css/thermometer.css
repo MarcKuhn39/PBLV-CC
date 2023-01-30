@@ -14,8 +14,17 @@ body {
     align-items: center;
     justify-content: center;
 } */
+
+element {
+    --bg-color: #405580;
+  }
+
 :root {
     --thermometer-value: 250px;
+    --thermometer-green: #00ff73;
+    --thermometer-yellow: #ffea00;
+    --thermometer-red: #ff0000;
+    --thermometer-current-color: #405580;
 }
 
 .logo {
@@ -53,7 +62,7 @@ body {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background-color: #0033ff;
+    background-color: var(--thermometer-current-color);
     position: absolute;
     top: 50%;
     left: 50%;
@@ -69,7 +78,7 @@ body {
     left: 50%;
     transform: translate(-50%, 5%);
     border-radius: 10px 10px 0 0;
-    background-color: #0033ff;
+    background-color: var(--thermometer-current-color);
 
     bottom: 0;
 
