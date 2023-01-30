@@ -82,7 +82,7 @@ element {
 
     bottom: 0;
 
-    animation: anim ease-out 1s forwards;
+    animation: anim ease-out 2s forwards;
     /* animation: scale-easeOutElastic; */
 
     
@@ -91,23 +91,23 @@ element {
 /* Wir nehmen an das wir nur 90% der Skala verwenden */
 @keyframes anim{
 	0% {
-		height: calc(0.05 * var(--thermometer-value));
+		height: calc(0.00 * var(--thermometer-value));
 	}
 
-	90% {
-		height: calc(1.0 * var(--thermometer-value))
-	}
-
-	93% {
-		height: calc(0.94 * var(--thermometer-value))
+    50% {
+		height: calc(0.00 * var(--thermometer-value));
 	}
 
 	97% {
-		height: calc(0.96 * var(--thermometer-value))
+		height: calc(1.00 * var(--thermometer-value))
+	}
+
+	99% {
+		height: calc(0.98 * var(--thermometer-value))
 	}
 
 	100% {
-		height: calc(0.95 * var(--thermometer-value))
+		height: calc(0.99 * var(--thermometer-value))
         /* height: (100*)%; */
 	}
 }

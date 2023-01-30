@@ -108,11 +108,17 @@
 
 
 <!-------------------------------------------- This section contains the Javascript Part ---------------------------------------------------->
-      <!-- Hier findet der Fetch statt für Thermometer, Daily Chart und Week Chart -->
 
+      <!-- integrate chartJS -->
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+      <!-- Hier findet der Fetch statt für Thermometer, Daily Chart und Week Chart -->
       <script>
         let maxCapacity = 250;
         let barHeight = 360;
+        let customDayData = [];
+        let customWeekData = [];
         let element = document.getElementById("barID");
           fetch("http://localhost:5000/full")
             .then(response => response.json())
@@ -125,64 +131,24 @@
                 element.style.setProperty("--thermometer-current-color", "var(--thermometer-yellow)");
               } else {
                 element.style.setProperty("--thermometer-current-color", "var(--thermometer-red)");
-                }
-                                                              // Anzahl der Leute aktuell * Pixelhöhe der Säule / Maximalkapazität
-                element.style.setProperty("--thermometer-value", data.currentVisitorCount*barHeight/maxCapacity + "px");
-                element.style.color = element.style.color;
-        });
+              }
+              // Hier wird die Größe und Farbe aktualisiert abhängig vom gefetchen Wert
+              element.style.setProperty("--thermometer-value", data.currentVisitorCount*barHeight/maxCapacity + "px");
+              element.style.color = element.style.color;
 
-      </script>
-
-      <script>
-        let thermometerColor = document.getElementById("--thermometer-current-value");
-          fetch("http://localhost:5000/full")
-            .then(response => response.json())
-            .then(data => {
-        if (data.stats.maxPerHourStat[0].count <= 50) {
-          thermometerColor.style.setProperty("--thermometer-current-value", "thermometer-green");
-          console.log(thermometerColor)
-        } else if (data.value <= 75) {
-          myElement = "yellow";
-        } else {
-          myElement = "red";
-        }
-
-        console.log(myElement)
-      });
-
-      </script>
-
-      <!-- integrate chartJS -->
-      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-      <!-- this is the code for the daily chart -->
-      <script>
-        let customDayData = []
-
-          fetch("http://localhost:5000/full")
-                  .then(response => {
-                    if (!response.ok) {
-                      throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                  })
-                  .then(data => {
-                    
-                    for (let step = 0; step < 7; step++) {
+              // Hier wird das Chart erstellt
+              for (let step = 0; step < 7; step++) {
                       customDayData.push(data.stats.maxPerHourStat[step].count)
                     }
-                    
 
-                    // Create the chart
-
-                    const ctxdaily = document.getElementById('myDailyChart');
+              const ctxdaily = document.getElementById('myDailyChart');
                     
-                    new Chart(ctxdaily, {
+              new Chart(ctxdaily, {
                       type: 'line',
                       data: {
                         labels: ['11 Uhr', '11.30 Uhr', '12 Uhr' , '12.30 Uhr', '13 Uhr', '13.30 Uhr', '14 Uhr'],
                         datasets: [{
-                          label: '# Amount of Visitors',
+                          label: 'Anzahl der Besucher',
                           data: customDayData,
                           backgroundColor: [
                             'rgba(255, 99, 132, 0.7)',
@@ -212,29 +178,11 @@
                         }
                       }
                     });
-                  })
-                  .catch(error => console.log("Error: ", error));
 
+                    // Hier wird das Week Chart erstellt
 
-
-
-      </script>
-      
-      <!-- this is the code for the week chart -->
-      <script>
-        let customWeekData = []
-
-fetch("http://localhost:5000/full")
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(data => {
-          
-          for (let step = 0; step < 5; step++) {
-            customWeekData.push(data.stats.maxPerDayStat[step].count)
+                    for (let step = 0; step < 5; step++) {
+                  customWeekData.push(data.stats.maxPerDayStat[step].count)
           }
           console.log(customWeekData)
 
@@ -245,7 +193,7 @@ fetch("http://localhost:5000/full")
           data: {
             labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
             datasets: [{
-              label: '# Peak Value',
+              label: 'Maximale Besucherzahl',
               data: customWeekData,
               backgroundColor: [
                 'rgba(255, 99, 132, 0.7)',
@@ -274,10 +222,10 @@ fetch("http://localhost:5000/full")
             }
           }
         });
-        })
-        .catch(error => console.log("Error: ", error));
+
+        });
       </script>
 
-            
+
 </body>
 </html>
