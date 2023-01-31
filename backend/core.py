@@ -17,6 +17,8 @@ WEEKLY_FILE_PATH = os.path.join(PATH, "weekly.txt")
 COUNTER_LIMIT_MIN = 0
 COUNTER_LIMIT_MAX = 400
 
+AVG_PERSON_COUNT = 10
+
 WEEKDAY = ("monday", "tuesday", "wednesday",
            "thursday", "friday", "saturday", "sunday")
 
@@ -160,14 +162,16 @@ class Core(threading.Thread):
             current_file.close()
 
     def write_values(self, current_file):
-        timeNow = datetime.datetime.now()
-        arrivals_5m = 0
-        for (time, port) in reversed(self.events):
-            if (timeNow - datetime.datetime.strptime(time, "%H:%M:%S")).seconds > 100:
-                break
-            if port == 0:
-                arrivals_5m += 1
-        estimated_queue_time = self.current_queueSize/(arrivals_5m)
+        estimated_queue_time = 0
+        persons = AVG_PERSON_COUNT
+        for i in range(AVG_PERSON_COUNT):
+            val = self._get_waiting_time_of_person(i)
+            if val == -1:
+                persons -= 1
+                continue
+            estimated_queue_time += self._get_waiting_time_of_person(i)
+        estimated_queue_time = estimated_queue_time / (persons*60)
+
         line = f"{self.current_counter}\n{self.current_queueSize}\n{estimated_queue_time}"
         current_file.seek(0)
         current_file.write(line)
@@ -208,6 +212,25 @@ class Core(threading.Thread):
         self.max_counter = 0
         self.events = []
         self.thread_event.clear()
+
+    def _get_waiting_time_of(self, person_ridx):
+        end_time = None
+        begin_time = None
+        end_idx = 0
+        begin_idx = 0
+        for (time, port) in reversed(self.events):
+            if port == 1:
+                end_idx += 1
+            if end_idx == person_ridx:
+                end_time = time
+            if end_time != None:
+                if begin_idx == self.current_queueSize + 1:
+                    begin_time = time
+                    break
+                begin_idx += 1
+        if (begin_time == None or end_time == None):
+            return -1
+        return (datetime.datetime.strptime(end_time, "%H:%M:%S") - datetime.datetime.strptime(begin_time, "%H:%M:%S")).seconds
 
 
 def get_current_day():
