@@ -1,6 +1,10 @@
+"""Core of the backend.
+
+Receives events over a serial connection, handles reading and writing values as well as scheduling.
+More information about the API can be found in README.md.
+"""
 import time
 import datetime
-import sys
 import os
 import threading
 from functools import reduce
@@ -17,15 +21,23 @@ WEEKLY_FILE_PATH = os.path.join(PATH, "weekly.txt")
 COUNTER_LIMIT_MIN = 0
 COUNTER_LIMIT_MAX = 400
 
-AVG_PERSON_COUNT = 10
+AVG_CUSTOMER_COUNT = 10
 
-WEEKDAY = ("monday", "tuesday", "wednesday",
-           "thursday", "friday", "saturday", "sunday")
+WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
 ARDUINO_PORT = "ARDUINO_PORT"
 
 
 def init_and_start_core():
+    """Initializes and starts the core.
+
+    During the initialization process, the name of the serial connection of the Arduino is read
+    from an environment variable. This environment variable needs to be set in a .env file in the
+    backend folder.
+
+    A scheduler will also be started to stop the cores operation every day from monday to friday,
+    by sending an event at midnight.
+    """
     port = config(ARDUINO_PORT)
     ser = serial.Serial(port=port, baudrate=9600, timeout=None)
     core = Core(ser)
@@ -39,16 +51,45 @@ def init_and_start_core():
 
 
 class Core(threading.Thread):
+    """
+    Core thread, which handles reading from a serial connection as well as file operations.
+
+    Attributes
+    ----------
+    ser : serial.Serial
+        The serial connection to the Arduino.
+    current_counter: int
+        The number of customers inside the cafeteria.
+    max_counter: int
+        The maximum number of customers inside the cafeteria.
+    current_queue_size: int
+        The number of customers waiting in line at the cash register.
+    events: list
+        Holds all the events received over the serial connection. The events contain a timestamp
+        and the number of the sensor.
+    thread_event: Event
+        A thread event, which can be set by another thread to end the current operation of the core.
+    """
+
     def __init__(self, ser):
         threading.Thread.__init__(self)
-        self.ser = ser
+        self.ser: serial.Serial = ser
         self.current_counter = 0
         self.max_counter = 0
-        self.current_queueSize = 0
+        self.current_queue_size = 0
         self.events = []
         self.thread_event = threading.Event()
 
     def run(self):
+        """
+        Starts the core.
+
+        The core detects events coming over a serial connection from the Arduino.
+        Counter values will be changed based on incoming events.
+
+        When stopped through an event, the core starts updating the weekly and daily values,
+        as well as resetting its own state to start receiving events for the next day.
+        """
         while True:
             # start write for current day
             self.write_current_counter()
@@ -64,7 +105,20 @@ class Core(threading.Thread):
             self.reset_state()
 
     def write_daily(self, current_day: pd.DataFrame):
+        """Updates daily values with the current values.
+
+        The total numbers of days passed as well as the average number of customers at the end of
+        a 30 minute intervall will be saved to a filed.
+        At the end of the day, a new average value gets calculated from the old and current data.
+        The number of days passed also gets incremented by one.
+        """
+
         def change_counter(counter, port):
+            """Helper function.
+
+            Increments counter by one for every customer who arrived and decrements the counter
+            for every customer who left.
+            """
             if port == 0:
                 return counter + 1
             if port == 2:
@@ -72,6 +126,7 @@ class Core(threading.Thread):
             return counter
 
         def customers_per_timespan(values):
+            """Calculates the number of customers at the end of a list of events."""
             return reduce(change_counter, values)
 
         # only get events which occurred during opening hours
@@ -82,13 +137,12 @@ class Core(threading.Thread):
             & (current_day["time"].dt.time <= end)
         ]
 
-        # find number of customers at the end of timerange
-        timerange = pd.date_range(
-            start="11:00:00", end="14:00:00", freq="30min")
+        # find number of customers at the end of 30 minute timerange
+        timerange = pd.date_range(start="11:00:00", end="14:00:00", freq="30min")
         current_values = (
             current_values.groupby(pd.Grouper(key="time", freq="30min"))
             .aggregate(customers_per_timespan)
-            .reindex(timerange)
+            .reindex(timerange)  # reindex to include timeranges with no customers
         )
         current_values = current_values.transpose().reset_index(drop=True)
         current_values = current_values.set_axis(
@@ -102,15 +156,14 @@ class Core(threading.Thread):
             drop=True
         )
 
-        # add current values to old values
+        # add current values to old values by building new average
         new_day_count = old_day_count + 1
-        new_values = old_values.add(
-            current_values, fill_value=0).div(new_day_count)
+        new_values = old_values.add(current_values, fill_value=0).div(new_day_count)
         new_values.insert(loc=0, column="day", value=new_day_count)
         new_values.to_csv(DAILY_FILE_PATH, index=False)
 
     def write_weekly(self):
-        # maybe just write down the day and the maximum per day for now
+        """Writes the maximum number of customers per day to a file."""
         current_day = get_current_day()
         max_per_day = self.max_counter
 
@@ -126,13 +179,24 @@ class Core(threading.Thread):
         new_values.to_csv(WEEKLY_FILE_PATH, index=False)
 
     def write_current_counter(self):
-        with open(CURRENT_FILE_PATH, "w", encoding="Ascii") as current_file:
-            # update current values continuesly
-            # read from standard in for testing purposes
-            while True:
+        """Receives events over a serial connection and updates current values.
 
-                if self.thread_event.is_set():
-                    break
+        This function reads events over a serial connection coming from an Arduino.
+        Detected events will be used to update the total number of customers
+        as well as the number of customers inside the queue.
+
+        There are three types of events:
+
+            PORT0: Customer entered cafeteria and queue.
+            PORT1: Customer left queue.
+            PORT2: Customer left cafeteria.
+
+        The current values will be written to a file every time an event occurs.
+        This operation only stoppes when explicitly signaled by a thread event.
+        """
+        with open(CURRENT_FILE_PATH, "w", encoding="Ascii") as current_file:
+
+            while not self.thread_event.is_set():
 
                 if self.ser.in_waiting > 0:
                     serial_data = ""
@@ -162,41 +226,58 @@ class Core(threading.Thread):
             current_file.close()
 
     def write_values(self, current_file):
-        estimated_queue_time = 0
-        persons = AVG_PERSON_COUNT
-        for i in range(AVG_PERSON_COUNT):
-            val = self._get_waiting_time_of_person(i)
-            if val == -1:
-                persons -= 1
-                continue
-            estimated_queue_time += self._get_waiting_time_of_person(i)
-        estimated_queue_time = estimated_queue_time / (persons*60)
-
-        line = f"{self.current_counter}\n{self.current_queueSize}\n{estimated_queue_time}"
+        estimated_queue_time = self.calculate_estimated_queue_time()
+        line = (
+            f"{self.current_counter}\n{self.current_queue_size}\n{estimated_queue_time}"
+        )
         current_file.seek(0)
         current_file.write(line)
         current_file.truncate()
         current_file.flush()
 
+    def calculate_estimated_queue_time(self):
+        """Calculates the estimated queue time"""
+        estimated_queue_time = 0
+        customers = AVG_CUSTOMER_COUNT
+        for i in range(AVG_CUSTOMER_COUNT):
+            val = self._get_waiting_time_of_customer(i)
+            if val == -1:
+                customers -= 1
+                continue
+            estimated_queue_time += self._get_waiting_time_of_customer(i)
+        return estimated_queue_time / (customers * 60)
+
     def add_event(self, port_number):
+        """Adds an event with a timestamp to the event list."""
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         row = [timestamp, port_number]
         self.events.append(row)
 
     def extract_from_serial(self, data):
+        """Extracts data coming from the serial connection."""
         return data.decode("Ascii").rstrip("\n")
 
     def increment_counter(self):
+        """Increments the counter for the number of customers.
+
+        The counter value will not be incremented when the maximum number of customers is reached.
+        This fuction also increments the counter for the number of customers inside the
+        queue.
+        """
         updated_counter = (
             (self.current_counter + 1)
             if self.current_counter < COUNTER_LIMIT_MAX
             else COUNTER_LIMIT_MAX
         )
-        self.current_queueSize = self.current_queueSize + 1
+        self.current_queue_size = self.current_queue_size + 1
         self.current_counter = updated_counter
         self.max_counter = max(self.current_counter, self.max_counter)
 
     def decrement_counter(self):
+        """Decrements the counter for the number of customers.
+
+        The counter value will not be decremented when the minimum number of customers is reached.
+        """
         updated_counter = (
             (self.current_counter - 1)
             if self.current_counter > COUNTER_LIMIT_MIN
@@ -205,35 +286,46 @@ class Core(threading.Thread):
         self.current_counter = max(0, updated_counter)
 
     def decrement_queue(self):
-        self.current_queueSize = max(0, self.current_queueSize - 1)
+        """Decrements the counter for the number of customers inside the queue.
+
+        The counter value will not be decremented when the queue is empty.
+        """
+        self.current_queue_size = max(0, self.current_queue_size - 1)
 
     def reset_state(self):
+        """Resets the state of the core to its intitial state."""
         self.current_counter = 0
         self.max_counter = 0
+        self.current_queue_size = 0
         self.events = []
         self.thread_event.clear()
 
-    def _get_waiting_time_of(self, person_ridx):
+    def _get_waiting_time_of_customer(self, customer_ridx):
+        """Calculates the waiting time of a customer."""
         end_time = None
         begin_time = None
         end_idx = 0
         begin_idx = 0
-        for (time, port) in reversed(self.events):
+        for (timestamp, port) in reversed(self.events):
             if port == 1:
                 end_idx += 1
-            if end_idx == person_ridx:
-                end_time = time
+            if end_idx == customer_ridx:
+                end_time = timestamp
             if end_time != None:
-                if begin_idx == self.current_queueSize + 1:
-                    begin_time = time
+                if begin_idx == self.current_queue_size + 1:
+                    begin_time = timestamp
                     break
                 begin_idx += 1
-        if (begin_time == None or end_time == None):
+        if begin_time == None or end_time == None:
             return -1
-        return (datetime.datetime.strptime(end_time, "%H:%M:%S") - datetime.datetime.strptime(begin_time, "%H:%M:%S")).seconds
+        return (
+            datetime.datetime.strptime(end_time, "%H:%M:%S")
+            - datetime.datetime.strptime(begin_time, "%H:%M:%S")
+        ).seconds
 
 
 def get_current_day():
+    """Returns the date and name of the current day."""
     day = datetime.date.today()
     return (day, WEEKDAY[day.weekday()])
 
