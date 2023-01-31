@@ -22,6 +22,9 @@
 
     <!-- integrate chartJS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- set constants -->
+    <script> const apiURL = "http://localhost:5000/full"</script>
 </head>
 
 <!-------------------------------------------- This section contains the HTML Part ---------------------------------------------------->
@@ -57,7 +60,7 @@
                 <!-- This is the counter for available Seats -->
                 <div id="seats-free"></div>
                   <script>
-                    fetch("http://localhost:5000/full")
+                    fetch(apiURL)
                         .then(response => response.json())
                         .then(data => {
                             let currentVisitorCount = data.currentVisitorCount;
@@ -73,7 +76,7 @@
                     <img class= "clock-downsizer" src="assets/img/blackclock.png" width="120" height= "auto"> <br>
                       <div id="queue-time" class="center">></div>
                         <script>
-                          fetch("http://localhost:5000/full")
+                          fetch(apiURL)
                               .then(response => response.json())
                               .then(data => {
                                   let queueTime = data.estimatedQueueTimeInMin;
@@ -120,7 +123,7 @@
     let customDayData = [];
     let customWeekData = [];
     let element = document.getElementById("barID");
-      fetch("http://localhost:5000/full")
+      fetch(apiURL)
         .then(response => response.json())
         .then(data => {
 
