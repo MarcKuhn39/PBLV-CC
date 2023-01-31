@@ -17,7 +17,8 @@ WEEKLY_FILE_PATH = os.path.join(PATH, "weekly.txt")
 COUNTER_LIMIT_MIN = 0
 COUNTER_LIMIT_MAX = 400
 
-WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+WEEKDAY = ("monday", "tuesday", "wednesday",
+           "thursday", "friday", "saturday", "sunday")
 
 ARDUINO_PORT = "ARDUINO_PORT"
 
@@ -41,6 +42,7 @@ class Core(threading.Thread):
         self.ser = ser
         self.current_counter = 0
         self.max_counter = 0
+        self.current_queueSize = 0
         self.events = []
         self.thread_event = threading.Event()
 
@@ -79,7 +81,8 @@ class Core(threading.Thread):
         ]
 
         # find number of customers at the end of timerange
-        timerange = pd.date_range(start="11:00:00", end="14:00:00", freq="30min")
+        timerange = pd.date_range(
+            start="11:00:00", end="14:00:00", freq="30min")
         current_values = (
             current_values.groupby(pd.Grouper(key="time", freq="30min"))
             .aggregate(customers_per_timespan)
@@ -99,7 +102,8 @@ class Core(threading.Thread):
 
         # add current values to old values
         new_day_count = old_day_count + 1
-        new_values = old_values.add(current_values, fill_value=0).div(new_day_count)
+        new_values = old_values.add(
+            current_values, fill_value=0).div(new_day_count)
         new_values.insert(loc=0, column="day", value=new_day_count)
         new_values.to_csv(DAILY_FILE_PATH, index=False)
 
@@ -123,28 +127,24 @@ class Core(threading.Thread):
         with open(CURRENT_FILE_PATH, "w", encoding="Ascii") as current_file:
             # update current values continuesly
             # read from standard in for testing purposes
-            for line in sys.stdin:
+            while True:
 
                 if self.thread_event.is_set():
                     break
 
-                # if self.ser.in_waiting > 0:
-                if True:
+                if self.ser.in_waiting > 0:
                     serial_data = ""
-                    # serial_data = self.ser.readline()
-                    serial_data = line.rstrip()
+                    serial_data = self.ser.readline()
 
-                    # match self.extract_from_serial(serial_data):
-                    match serial_data:
+                    match self.extract_from_serial(serial_data):
                         case "PORT0":  # customers entering cafeteria and queue
                             self.increment_counter()
                             self.add_event(0)
                             self.write_values(current_file)
                         case "PORT1":  # customers leaving queue
-                            pass
-                            # self.increment_counter()
-                            # self.add_event(1)
-                            # self.write_values(current_file)
+                            self.decrement_queue()
+                            self.add_event(1)
+                            self.write_values(current_file)
                         case "PORT2":  # customers leaving cafeteria
                             self.decrement_counter()
                             self.add_event(2)
@@ -160,8 +160,15 @@ class Core(threading.Thread):
             current_file.close()
 
     def write_values(self, current_file):
-        estimated_queue_time = 0
-        line = f"{self.current_counter}\n{estimated_queue_time}"
+        timeNow = datetime.datetime.now()
+        arrivals_5m = 0
+        for (time, port) in reversed(self.events):
+            if (timeNow - datetime.datetime.strptime(time, "%H:%M:%S")).seconds > 100:
+                break
+            if port == 0:
+                arrivals_5m += 1
+        estimated_queue_time = self.current_queueSize/(arrivals_5m)
+        line = f"{self.current_counter}\n{self.current_queueSize}\n{estimated_queue_time}"
         current_file.seek(0)
         current_file.write(line)
         current_file.truncate()
@@ -181,7 +188,7 @@ class Core(threading.Thread):
             if self.current_counter < COUNTER_LIMIT_MAX
             else COUNTER_LIMIT_MAX
         )
-
+        self.current_queueSize = self.current_queueSize + 1
         self.current_counter = updated_counter
         self.max_counter = max(self.current_counter, self.max_counter)
 
@@ -192,6 +199,9 @@ class Core(threading.Thread):
             else COUNTER_LIMIT_MIN
         )
         self.current_counter = updated_counter
+
+    def decrement_queue(self):
+        self.current_queueSize = self.current_queueSize - 1
 
     def reset_state(self):
         self.current_counter = 0
