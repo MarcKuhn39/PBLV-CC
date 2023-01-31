@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-------------------------------------------- This section contains the Meta Data ---------------------------------------------------->
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cafeteria Counter HM</title>
+  <!-------------------------------------------- This section contains the Imports ---------------------------------------------------->
     <!-- Bootstrap Integration -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
@@ -14,11 +16,15 @@
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
     <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
 
-    <!-- integrating style.css (for background)-->
+    <!-- integrating style.css for background & thermometer.css for Thermometer-->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/thermometer.css">
 
+    <!-- integrate chartJS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
+<!-------------------------------------------- This section contains the HTML Part ---------------------------------------------------->
 
 <body style="font-size:25px;">
      <!-- This is the Heading Line -->
@@ -65,7 +71,7 @@
                 <!-- This is the estimated waiting time -->
 
                     <img class= "clock-downsizer" src="assets/img/blackclock.png" width="120" height= "auto"> <br>
-                        <div id="queue-time" class="center">></div>
+                      <div id="queue-time" class="center">></div>
                         <script>
                           fetch("http://localhost:5000/full")
                               .then(response => response.json())
@@ -81,8 +87,6 @@
                           }
                           </style> <br>
             </div>
-
-
             
         <!-- This is the right card -->
             <div class="card shadow-sm">
@@ -109,123 +113,115 @@
 
 <!-------------------------------------------- This section contains the Javascript Part ---------------------------------------------------->
 
-      <!-- integrate chartJS -->
-      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Hier findet der Fetch statt für Thermometer, Day Chart und Week Chart -->
+  <script>
+    let maxCapacity = 250;
+    let barHeight = 360;
+    let customDayData = [];
+    let customWeekData = [];
+    let element = document.getElementById("barID");
+      fetch("http://localhost:5000/full")
+        .then(response => response.json())
+        .then(data => {
 
-
-      <!-- Hier findet der Fetch statt für Thermometer, Daily Chart und Week Chart -->
-      <script>
-        let maxCapacity = 250;
-        let barHeight = 360;
-        let customDayData = [];
-        let customWeekData = [];
-        let element = document.getElementById("barID");
-          fetch("http://localhost:5000/full")
-            .then(response => response.json())
-            .then(data => {
-
-              // Hier wird das Thermometer erstellt
-              if (data.currentVisitorCount <= maxCapacity * 0.25) {
-                element.style.setProperty("--thermometer-current-color", "var(--thermometer-green)");
-              } else if (data.currentVisitorCount <= maxCapacity * 0.5) {
-                element.style.setProperty("--thermometer-current-color", "var(--thermometer-yellow)");
-              } else {
-                element.style.setProperty("--thermometer-current-color", "var(--thermometer-red)");
-              }
-              // Hier wird die Größe und Farbe aktualisiert abhängig vom gefetchen Wert
-              element.style.setProperty("--thermometer-value", data.currentVisitorCount*barHeight/maxCapacity + "px");
-              element.style.color = element.style.color;
-
-              // Hier wird das Chart erstellt
-              for (let step = 0; step < 7; step++) {
-                      customDayData.push(data.stats.maxPerHourStat[step].count)
-                    }
-
-              const ctxdaily = document.getElementById('myDailyChart');
-                    
-              new Chart(ctxdaily, {
-                      type: 'line',
-                      data: {
-                        labels: ['11 Uhr', '11.30 Uhr', '12 Uhr' , '12.30 Uhr', '13 Uhr', '13.30 Uhr', '14 Uhr'],
-                        datasets: [{
-                          label: 'Anzahl der Besucher',
-                          data: customDayData,
-                          backgroundColor: [
-                            'rgba(255, 99, 132, 0.7)',
-                            'rgba(54, 162, 235, 0.7)',
-                            'rgba(255, 206, 86, 0.7)',
-                            'rgba(75, 192, 192, 0.7)',
-                            'rgba(255, 102, 255, 0.7)',
-                            'rgba(100, 232, 145, 0.7)',
-                            'rgba(255, 162, 75, 0.7)'
-                          ],
-                          borderColor: [
-                          'rgba(255, 99, 132, 0.9)',
-                            'rgba(54, 162, 235, 0.9)',
-                            'rgba(255, 206, 86, 0.9)',
-                            'rgba(75, 192, 192, 0.9)',
-                            'rgba(255, 102, 255, 0.9)',
-                            'rgba(100, 232, 145, 0.7)'
-                          ],
-                          borderWidth: 1
-                        }]
-                      },
-                      options: {
-                        scales: {
-                          y: {
-                            beginAtZero: true
-                          }
-                        }
-                      }
-                    });
-
-                    // Hier wird das Week Chart erstellt
-
-                    for (let step = 0; step < 5; step++) {
-                  customWeekData.push(data.stats.maxPerDayStat[step].count)
+          // Hier wird das Thermometer erstellt
+          if (data.currentVisitorCount <= maxCapacity * 0.25) {
+            element.style.setProperty("--thermometer-current-color", "var(--thermometer-green)");
+          } else if (data.currentVisitorCount <= maxCapacity * 0.5) {
+            element.style.setProperty("--thermometer-current-color", "var(--thermometer-yellow)");
+          } else {
+            element.style.setProperty("--thermometer-current-color", "var(--thermometer-red)");
           }
-          console.log(customWeekData)
+          // Hier wird die Größe und Farbe aktualisiert abhängig vom gefetchen Wert
+          element.style.setProperty("--thermometer-value", data.currentVisitorCount*barHeight/maxCapacity + "px");
+          element.style.color = element.style.color;
 
-                  // create the chart
-        const ctx = document.getElementById('myWeekChart');
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-            datasets: [{
-              label: 'Maximale Besucherzahl',
-              data: customWeekData,
-              backgroundColor: [
-                'rgba(255, 99, 132, 0.7)',
-                'rgba(54, 162, 235, 0.7)',
-                'rgba(255, 206, 86, 0.7)',
-                'rgba(75, 192, 192, 0.7)',
-                'rgba(255, 102, 255, 0.7)',
-                'rgba(100, 232, 145, 0.7)'
-              ],
-              borderColor: [
-              'rgba(255, 99, 132, 0.9)',
-                'rgba(54, 162, 235, 0.9)',
-                'rgba(255, 206, 86, 0.9)',
-                'rgba(75, 192, 192, 0.9)',
-                'rgba(255, 102, 255, 0.9)',
-                'rgba(100, 232, 145, 0.7)'
-              ],
-              borderWidth: 1
-            }]
-          },
-          options: {
-            scales: {
-              y: {
-                beginAtZero: true
+          // Hier wird das Chart erstellt
+          for (let step = 0; step < 7; step++) {
+                  customDayData.push(data.stats.maxPerHourStat[step].count)
+                }
+
+          const ctxdaily = document.getElementById('myDailyChart');
+                
+          new Chart(ctxdaily, {
+                  type: 'line',
+                  data: {
+                    labels: ['11 Uhr', '11.30 Uhr', '12 Uhr' , '12.30 Uhr', '13 Uhr', '13.30 Uhr', '14 Uhr'],
+                    datasets: [{
+                      label: 'Anzahl der Besucher',
+                      data: customDayData,
+                      backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(255, 102, 255, 0.7)',
+                        'rgba(100, 232, 145, 0.7)',
+                        'rgba(255, 162, 75, 0.7)'
+                      ],
+                      borderColor: [
+                      'rgba(255, 99, 132, 0.9)',
+                        'rgba(54, 162, 235, 0.9)',
+                        'rgba(255, 206, 86, 0.9)',
+                        'rgba(75, 192, 192, 0.9)',
+                        'rgba(255, 102, 255, 0.9)',
+                        'rgba(100, 232, 145, 0.7)'
+                      ],
+                      borderWidth: 1
+                    }]
+                  },
+                  options: {
+                    scales: {
+                      y: {
+                        beginAtZero: true
+                      }
+                    }
+                  }
+                });
+
+          // Hier wird das Week Chart erstellt
+
+          for (let step = 0; step < 5; step++) {
+            customWeekData.push(data.stats.maxPerDayStat[step].count)
+          }
+
+          const ctx = document.getElementById('myWeekChart');
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+              datasets: [{
+                label: 'Maximale Besucherzahl',
+                data: customWeekData,
+                backgroundColor: [
+                  'rgba(255, 99, 132, 0.7)',
+                  'rgba(54, 162, 235, 0.7)',
+                  'rgba(255, 206, 86, 0.7)',
+                  'rgba(75, 192, 192, 0.7)',
+                  'rgba(255, 102, 255, 0.7)',
+                  'rgba(100, 232, 145, 0.7)'
+                ],
+                borderColor: [
+                'rgba(255, 99, 132, 0.9)',
+                  'rgba(54, 162, 235, 0.9)',
+                  'rgba(255, 206, 86, 0.9)',
+                  'rgba(75, 192, 192, 0.9)',
+                  'rgba(255, 102, 255, 0.9)',
+                  'rgba(100, 232, 145, 0.7)'
+                ],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
               }
             }
-          }
+          });
         });
-
-        });
-      </script>
-
+  </script>
 
 </body>
 </html>
