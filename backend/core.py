@@ -23,8 +23,6 @@ COUNTER_LIMIT_MAX = 400
 
 AVG_CUSTOMER_COUNT = 10
 
-AVG_CUSTOMER_COUNT = 10
-
 WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
 ARDUINO_PORT = "ARDUINO_PORT"
