@@ -26,7 +26,8 @@ def get_base():
 def get_current():
     data = create_curent_data()
     response = {"currentVisitorCount": data[0],
-                "estimatedQueueTimeInMin": data[1]}
+                "currentQueueSize": data[1],
+                "estimatedQueueTimeInMin": data[2]}
     return jsonify(response)
 
 
@@ -35,7 +36,8 @@ def get_full():
     data = create_full_data()
     response = {
         "currentVisitorCount": data[0][0],
-        "estimatedQueueTimeInMin": data[0][1],
+        "currentQueueSize": data[0][1],
+        "estimatedQueueTimeInMin": data[0][2],
         "stats": {"maxPerDayStat": data[1], "maxPerHourStat": data[2]},
     }
     return jsonify(response)
@@ -47,8 +49,9 @@ def create_curent_data():
         if len(lines) == 0:
             return (0, 0)
         current_visitor_count = lines[0].strip("\n")
-        estimated_queue_time_in_min = lines[1]
-        return (current_visitor_count, estimated_queue_time_in_min)
+        current_queue_size = lines[1].strip("\n")
+        estimated_queue_time_in_min = lines[2]
+        return (current_visitor_count, current_queue_size, estimated_queue_time_in_min)
 
 
 def create_full_data():
