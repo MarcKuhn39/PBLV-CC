@@ -9,6 +9,7 @@ It provides 3 endpoints:
   ```javascript
   {
     "currentVisitorCount": number,
+    "currentQueueSize": number,
     "estimatedQueueTimeInMin": number
   }
   ```
@@ -17,6 +18,7 @@ It provides 3 endpoints:
   ```javascript
     {
       "currentVisitorCount": number,
+      "currentQueueSize": number,
       "estimatedQueueTimeInMin": number,
       "stats":
       {

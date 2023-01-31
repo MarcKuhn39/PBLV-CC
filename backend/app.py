@@ -1,12 +1,13 @@
+"""Provides a REST API for the backend.
+
+This REST API accepts get requests for the current number of customers presentes and the estimated
+queue time as well as weekly and daily summaries.
+"""
 import os
 import datetime
 from flask import Flask, jsonify
 from flask_cors import CORS
 import pandas as pd
-
-
-# Creates a REST API which provides the current number of customers present and the estimated
-# queue time as well as daily and weekly summaries.
 
 app = Flask(__name__)
 CORS(app)
@@ -25,9 +26,11 @@ def get_base():
 @app.get("/current")
 def get_current():
     data = create_curent_data()
-    response = {"currentVisitorCount": data[0],
-                "currentQueueSize": data[1],
-                "estimatedQueueTimeInMin": data[2]}
+    response = {
+        "currentVisitorCount": data[0],
+        "currentQueueSize": data[1],
+        "estimatedQueueTimeInMin": data[2],
+    }
     return jsonify(response)
 
 
