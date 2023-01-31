@@ -198,10 +198,10 @@ class Core(threading.Thread):
             if self.current_counter > COUNTER_LIMIT_MIN
             else COUNTER_LIMIT_MIN
         )
-        self.current_counter = updated_counter
+        self.current_counter = max(0, updated_counter)
 
     def decrement_queue(self):
-        self.current_queueSize = self.current_queueSize - 1
+        self.current_queueSize = max(0, self.current_queueSize - 1)
 
     def reset_state(self):
         self.current_counter = 0
