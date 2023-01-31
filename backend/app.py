@@ -25,7 +25,8 @@ def get_base():
 @app.get("/current")
 def get_current():
     data = create_curent_data()
-    response = {"currentVisitorCount": data[0], "estimatedQueueTimeInMin": data[1]}
+    response = {"currentVisitorCount": data[0],
+                "estimatedQueueTimeInMin": data[1]}
     return jsonify(response)
 
 
@@ -43,6 +44,8 @@ def get_full():
 def create_curent_data():
     with open(CURRENT_FILE_PATH, mode="r", encoding="Ascii") as current_file:
         lines = current_file.readlines()
+        if len(lines) == 0:
+            return (0, 0)
         current_visitor_count = lines[0].strip("\n")
         estimated_queue_time_in_min = lines[1]
         return (current_visitor_count, estimated_queue_time_in_min)
