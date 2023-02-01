@@ -50,7 +50,7 @@ def create_curent_data():
     with open(CURRENT_FILE_PATH, mode="r", encoding="Ascii") as current_file:
         lines = current_file.readlines()
         if len(lines) == 0:
-            return (0, 0)
+            return (0, 0, 0)
         current_visitor_count = lines[0].strip("\n")
         current_queue_size = lines[1].strip("\n")
         estimated_queue_time_in_min = lines[2]

@@ -27,6 +27,12 @@ WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "
 
 ARDUINO_PORT = "ARDUINO_PORT"
 
+IN_PORT = 0
+QUEUE_PORT = 1
+OUT_PORT = 2
+
+FMT = "%H:%M:%S"
+
 
 def init_and_start_core():
     """Initializes and starts the core.
@@ -205,15 +211,15 @@ class Core(threading.Thread):
                     match self.extract_from_serial(serial_data):
                         case "PORT0":  # customers entering cafeteria and queue
                             self.increment_counter()
-                            self.add_event(0)
+                            self.add_event(IN_PORT)
                             self.write_values(current_file)
                         case "PORT1":  # customers leaving queue
                             self.decrement_queue()
-                            self.add_event(1)
+                            self.add_event(QUEUE_PORT)
                             self.write_values(current_file)
                         case "PORT2":  # customers leaving cafeteria
                             self.decrement_counter()
-                            self.add_event(2)
+                            self.add_event(OUT_PORT)
                             self.write_values(current_file)
                         case "EXIT":
                             break
@@ -226,10 +232,8 @@ class Core(threading.Thread):
             current_file.close()
 
     def write_values(self, current_file):
-        estimated_queue_time = self.calculate_estimated_queue_time()
-        line = (
-            f"{self.current_counter}\n{self.current_queue_size}\n{estimated_queue_time}"
-        )
+        estimated_queue_time = self._avg_waiting_time(15)
+        line = f"{self.current_counter}\n{self.current_queueSize}\n{estimated_queue_time}"
         current_file.seek(0)
         current_file.write(line)
         current_file.truncate()
@@ -248,7 +252,6 @@ class Core(threading.Thread):
         return estimated_queue_time / (customers * 60)
 
     def add_event(self, port_number):
-        """Adds an event with a timestamp to the event list."""
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         row = [timestamp, port_number]
         self.events.append(row)
@@ -264,13 +267,8 @@ class Core(threading.Thread):
         This fuction also increments the counter for the number of customers inside the
         queue.
         """
-        updated_counter = (
-            (self.current_counter + 1)
-            if self.current_counter < COUNTER_LIMIT_MAX
-            else COUNTER_LIMIT_MAX
-        )
-        self.current_queue_size = self.current_queue_size + 1
-        self.current_counter = updated_counter
+        self.current_counter = min(COUNTER_LIMIT_MAX, self.current_counter + 1)
+        self.current_queueSize = self.current_queueSize + 1
         self.max_counter = max(self.current_counter, self.max_counter)
 
     def decrement_counter(self):
@@ -278,12 +276,7 @@ class Core(threading.Thread):
 
         The counter value will not be decremented when the minimum number of customers is reached.
         """
-        updated_counter = (
-            (self.current_counter - 1)
-            if self.current_counter > COUNTER_LIMIT_MIN
-            else COUNTER_LIMIT_MIN
-        )
-        self.current_counter = max(0, updated_counter)
+        self.current_counter = max(COUNTER_LIMIT_MIN, self.current_counter - 1)
 
     def decrement_queue(self):
         """Decrements the counter for the number of customers inside the queue.
@@ -300,28 +293,31 @@ class Core(threading.Thread):
         self.events = []
         self.thread_event.clear()
 
-    def _get_waiting_time_of_customer(self, customer_ridx):
-        """Calculates the waiting time of a customer."""
-        end_time = None
-        begin_time = None
-        end_idx = 0
-        begin_idx = 0
-        for (timestamp, port) in reversed(self.events):
-            if port == 1:
-                end_idx += 1
-            if end_idx == customer_ridx:
-                end_time = timestamp
-            if end_time != None:
-                if begin_idx == self.current_queue_size + 1:
-                    begin_time = timestamp
-                    break
-                begin_idx += 1
-        if begin_time == None or end_time == None:
-            return -1
-        return (
-            datetime.datetime.strptime(end_time, "%H:%M:%S")
-            - datetime.datetime.strptime(begin_time, "%H:%M:%S")
-        ).seconds
+    def _avg_waiting_time(self, person_count):
+        """Calculates the average waiting time for the last person_count customers
+        """
+        # old queue size
+        old_queue_size = self.current_queueSize + 1
+        # extract port 0 and port 1 events from self.events
+        port0_events = [event[0]
+                        for event in reversed(self.events) if event[1] == 0]
+        port1_events = [event[0]
+                        for event in reversed(self.events) if event[1] == 1]
+
+        # collect combined end and begin time deltas
+        time_deltas = []
+        actual_person_count = 0
+        for i in range(person_count):
+            if i >= len(port1_events) or i+old_queue_size >= len(port0_events):
+                break
+            actual_person_count += 1
+            end_time = datetime.datetime.strptime(port1_events[i], FMT)
+            begin_time = datetime.datetime.strptime(
+                port0_events[i+old_queue_size], FMT)
+            time_deltas.append((end_time - begin_time).seconds)
+        if (actual_person_count == 0):
+            return 0
+        return sum(time_deltas) / (actual_person_count*60)
 
 
 def get_current_day():
