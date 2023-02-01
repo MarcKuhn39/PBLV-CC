@@ -212,7 +212,7 @@ class Core(threading.Thread):
                     serial_data = ""
                     serial_data = self.ser.readline()
                     data = self.extract_from_serial(serial_data)
-                    print(f"[Log] Serial Data {data}")
+                    print(f"[LOG] Serial Data {data}")
                     match data:
                         case "PORT0":  # customers entering cafeteria and queue
                             self.increment_counter()
