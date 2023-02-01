@@ -211,8 +211,9 @@ class Core(threading.Thread):
                 if self.ser.in_waiting > 0:
                     serial_data = ""
                     serial_data = self.ser.readline()
-
-                    match self.extract_from_serial(serial_data):
+                    data = self.extract_from_serial(serial_data)
+                    print(f"[LOG] Serial Data {data}")
+                    match data:
                         case "PORT0":  # customers entering cafeteria and queue
                             self.increment_counter()
                             self.add_event(IN_PORT)
@@ -326,6 +327,7 @@ class Core(threading.Thread):
             time_deltas.append((end_time - begin_time).seconds)
         if (actual_person_count == 0):
             return 0
+        print(f"Persons averaged over {actual_person_count}")
         return sum(time_deltas) / (actual_person_count*60)
 
 
