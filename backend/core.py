@@ -23,7 +23,8 @@ COUNTER_LIMIT_MAX = 400
 
 AVG_CUSTOMER_COUNT = 10
 
-WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+WEEKDAY = ("monday", "tuesday", "wednesday",
+           "thursday", "friday", "saturday", "sunday")
 
 ARDUINO_PORT = "ARDUINO_PORT"
 
@@ -144,11 +145,13 @@ class Core(threading.Thread):
         ]
 
         # find number of customers at the end of 30 minute timerange
-        timerange = pd.date_range(start="11:00:00", end="14:00:00", freq="30min")
+        timerange = pd.date_range(
+            start="11:00:00", end="14:00:00", freq="30min")
         current_values = (
             current_values.groupby(pd.Grouper(key="time", freq="30min"))
             .aggregate(customers_per_timespan)
-            .reindex(timerange)  # reindex to include timeranges with no customers
+            # reindex to include timeranges with no customers
+            .reindex(timerange)
         )
         current_values = current_values.transpose().reset_index(drop=True)
         current_values = current_values.set_axis(
@@ -164,7 +167,8 @@ class Core(threading.Thread):
 
         # add current values to old values by building new average
         new_day_count = old_day_count + 1
-        new_values = old_values.add(current_values, fill_value=0).div(new_day_count)
+        new_values = old_values.add(
+            current_values, fill_value=0).div(new_day_count)
         new_values.insert(loc=0, column="day", value=new_day_count)
         new_values.to_csv(DAILY_FILE_PATH, index=False)
 
@@ -201,7 +205,7 @@ class Core(threading.Thread):
         This operation only stoppes when explicitly signaled by a thread event.
         """
         with open(CURRENT_FILE_PATH, "w", encoding="Ascii") as current_file:
-
+            customer_id = 0
             while not self.thread_event.is_set():
 
                 if self.ser.in_waiting > 0:
@@ -213,14 +217,19 @@ class Core(threading.Thread):
                             self.increment_counter()
                             self.add_event(IN_PORT)
                             self.write_values(current_file)
+                            customer_id += 1
+                            print(f"[LOG] New Customer {customer_id}")
                         case "PORT1":  # customers leaving queue
                             self.decrement_queue()
                             self.add_event(QUEUE_PORT)
                             self.write_values(current_file)
+                            print(
+                                f"[LOG] Customer {customer_id-self.current_queue_size} exits queue")
                         case "PORT2":  # customers leaving cafeteria
                             self.decrement_counter()
                             self.add_event(OUT_PORT)
                             self.write_values(current_file)
+                            print(f"[LOG] Customer exits")
                         case "EXIT":
                             break
                         case _:
@@ -233,7 +242,7 @@ class Core(threading.Thread):
 
     def write_values(self, current_file):
         estimated_queue_time = self._avg_waiting_time(15)
-        line = f"{self.current_counter}\n{self.current_queueSize}\n{estimated_queue_time}"
+        line = f"{self.current_counter}\n{self.current_queue_size}\n{estimated_queue_time}"
         current_file.seek(0)
         current_file.write(line)
         current_file.truncate()
@@ -268,7 +277,7 @@ class Core(threading.Thread):
         queue.
         """
         self.current_counter = min(COUNTER_LIMIT_MAX, self.current_counter + 1)
-        self.current_queueSize = self.current_queueSize + 1
+        self.current_queue_size = self.current_queue_size + 1
         self.max_counter = max(self.current_counter, self.max_counter)
 
     def decrement_counter(self):
@@ -297,7 +306,7 @@ class Core(threading.Thread):
         """Calculates the average waiting time for the last person_count customers
         """
         # old queue size
-        old_queue_size = self.current_queueSize + 1
+        old_queue_size = self.current_queue_size + 1
         # extract port 0 and port 1 events from self.events
         port0_events = [event[0]
                         for event in reversed(self.events) if event[1] == 0]
@@ -308,12 +317,12 @@ class Core(threading.Thread):
         time_deltas = []
         actual_person_count = 0
         for i in range(person_count):
-            if i >= len(port1_events) or i+old_queue_size >= len(port0_events):
+            if i >= len(port1_events) or i+old_queue_size + 1 >= len(port0_events):
                 break
             actual_person_count += 1
             end_time = datetime.datetime.strptime(port1_events[i], FMT)
             begin_time = datetime.datetime.strptime(
-                port0_events[i+old_queue_size], FMT)
+                port0_events[i+old_queue_size+1], FMT)
             time_deltas.append((end_time - begin_time).seconds)
         if (actual_person_count == 0):
             return 0
