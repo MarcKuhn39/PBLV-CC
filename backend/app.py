@@ -2,6 +2,7 @@
 
 This REST API accepts get requests for the current number of customers presentes and the estimated
 queue time as well as weekly and daily summaries.
+More information about the API can be found in README.md.
 """
 import os
 import datetime
