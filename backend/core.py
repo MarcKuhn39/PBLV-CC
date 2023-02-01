@@ -1,7 +1,6 @@
 """Core of the backend.
 
 Receives events over a serial connection, handles reading and writing values as well as scheduling.
-More information about the API can be found in README.md.
 """
 import time
 import datetime
@@ -23,8 +22,7 @@ COUNTER_LIMIT_MAX = 400
 
 AVG_CUSTOMER_COUNT = 10
 
-WEEKDAY = ("monday", "tuesday", "wednesday",
-           "thursday", "friday", "saturday", "sunday")
+WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 
 ARDUINO_PORT = "ARDUINO_PORT"
 
@@ -145,11 +143,11 @@ class Core(threading.Thread):
         ]
 
         # find number of customers at the end of 30 minute timerange
-        timerange = pd.date_range(
-            start="11:00:00", end="14:00:00", freq="30min")
+        timerange = pd.date_range(start="11:00:00", end="14:00:00", freq="30min")
         current_values = (
-            current_values.groupby(pd.Grouper(key="time", freq="30min"))
-            .aggregate(customers_per_timespan)
+            current_values.groupby(pd.Grouper(key="time", freq="30min")).aggregate(
+                customers_per_timespan
+            )
             # reindex to include timeranges with no customers
             .reindex(timerange)
         )
@@ -167,8 +165,7 @@ class Core(threading.Thread):
 
         # add current values to old values by building new average
         new_day_count = old_day_count + 1
-        new_values = old_values.add(
-            current_values, fill_value=0).div(new_day_count)
+        new_values = old_values.add(current_values, fill_value=0).div(new_day_count)
         new_values.insert(loc=0, column="day", value=new_day_count)
         new_values.to_csv(DAILY_FILE_PATH, index=False)
 
@@ -225,12 +222,13 @@ class Core(threading.Thread):
                             self.add_event(QUEUE_PORT)
                             self.write_values(current_file)
                             print(
-                                f"[LOG] Customer {customer_id-self.current_queue_size} exits queue")
+                                f"[LOG] Customer {customer_id-self.current_queue_size} exits queue"
+                            )
                         case "PORT2":  # customers leaving cafeteria
                             self.decrement_counter()
                             self.add_event(OUT_PORT)
                             self.write_values(current_file)
-                            print(f"[LOG] Customer exits")
+                            print("[LOG] Customer exits")
                         case "EXIT":
                             break
                         case _:
@@ -242,26 +240,22 @@ class Core(threading.Thread):
             current_file.close()
 
     def write_values(self, current_file):
+        """Writes current values to a file.
+
+        Current values include the total number of customers present, the number of customers
+        insite the queue as well as the estimated queue time.
+        """
         estimated_queue_time = self._avg_waiting_time(15)
-        line = f"{self.current_counter}\n{self.current_queue_size}\n{estimated_queue_time}"
+        line = (
+            f"{self.current_counter}\n{self.current_queue_size}\n{estimated_queue_time}"
+        )
         current_file.seek(0)
         current_file.write(line)
         current_file.truncate()
         current_file.flush()
 
-    def calculate_estimated_queue_time(self):
-        """Calculates the estimated queue time"""
-        estimated_queue_time = 0
-        customers = AVG_CUSTOMER_COUNT
-        for i in range(AVG_CUSTOMER_COUNT):
-            val = self._get_waiting_time_of_customer(i)
-            if val == -1:
-                customers -= 1
-                continue
-            estimated_queue_time += self._get_waiting_time_of_customer(i)
-        return estimated_queue_time / (customers * 60)
-
     def add_event(self, port_number):
+        """Adds an event consisting of a timestamp and port number to the event list."""
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         row = [timestamp, port_number]
         self.events.append(row)
@@ -304,31 +298,29 @@ class Core(threading.Thread):
         self.thread_event.clear()
 
     def _avg_waiting_time(self, person_count):
-        """Calculates the average waiting time for the last person_count customers
-        """
+        """Calculates the average waiting time for the last person_count customers"""
         # old queue size
         old_queue_size = self.current_queue_size + 1
         # extract port 0 and port 1 events from self.events
-        port0_events = [event[0]
-                        for event in reversed(self.events) if event[1] == 0]
-        port1_events = [event[0]
-                        for event in reversed(self.events) if event[1] == 1]
+        port0_events = [event[0] for event in reversed(self.events) if event[1] == 0]
+        port1_events = [event[0] for event in reversed(self.events) if event[1] == 1]
 
         # collect combined end and begin time deltas
         time_deltas = []
         actual_person_count = 0
         for i in range(person_count):
-            if i >= len(port1_events) or i+old_queue_size + 1 >= len(port0_events):
+            if i >= len(port1_events) or i + old_queue_size + 1 >= len(port0_events):
                 break
             actual_person_count += 1
             end_time = datetime.datetime.strptime(port1_events[i], FMT)
             begin_time = datetime.datetime.strptime(
-                port0_events[i+old_queue_size+1], FMT)
+                port0_events[i + old_queue_size + 1], FMT
+            )
             time_deltas.append((end_time - begin_time).seconds)
-        if (actual_person_count == 0):
+        if actual_person_count == 0:
             return 0
         print(f"Persons averaged over {actual_person_count}")
-        return sum(time_deltas) / (actual_person_count*60)
+        return sum(time_deltas) / (actual_person_count * 60)
 
 
 def get_current_day():
