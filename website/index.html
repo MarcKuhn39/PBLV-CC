@@ -74,21 +74,18 @@
                 <!-- This is the estimated waiting time -->
 
                     <img class= "clock-downsizer" src="assets/img/blackclock.png" width="120" height= "auto"> <br>
-                      <div id="queue-time" class="center">></div>
-                        <script>
-                          fetch(apiURL)
-                              .then(response => response.json())
-                              .then(data => {
-                                  let queueTime = data.estimatedQueueTimeInMin;
-                                  document.getElementById("queue-time").innerHTML = `Vorraussichtliche Wartezeit: ${queueTime} minuten`;
-                              })
-                              .catch(error => console.log(error));
-                        </script>
+                      <div id="queue-time" class="center"></div> <br>
+                      <div id="queue-size" class="center"></div> <br>
                         <style>
                           #queue-time {
                             text-align: center;
                           }
-                          </style> <br>
+                        </style>
+                        <style>
+                          #queue-size {
+                            text-align: center;
+                          }
+                        </style>
             </div>
             
         <!-- This is the right card -->
@@ -126,6 +123,12 @@
       fetch(apiURL)
         .then(response => response.json())
         .then(data => {
+
+          // Hier werden die Daten zu Wartezeit und Warteschlangengröße gefetcht
+          let queueTime = data.estimatedQueueTimeInMin;
+          document.getElementById("queue-time").innerHTML = `Vorraussichtliche Wartezeit: ${queueTime} minuten`;
+          let queueSize = data.currentQueueSize;
+          document.getElementById("queue-size").innerHTML = `Derzeite Warteschlangengröße: ${queueSize} minuten`;
 
           // Hier wird das Thermometer erstellt
           if (data.currentVisitorCount <= maxCapacity * 0.25) {
