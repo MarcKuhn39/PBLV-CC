@@ -58,18 +58,7 @@
                 </section> <br>
 
                 <!-- This is the counter for available Seats -->
-                <div id="seats-free"></div>
-                  <script>
-                    fetch(apiURL)
-                        .then(response => response.json())
-                        .then(data => {
-                            let currentVisitorCount = data.currentVisitorCount;
-                            document.getElementById("seats-free").innerHTML = `In der Mensa: ${currentVisitorCount}`;
-                        })
-                        .catch(error => console.log(error));
-                  </script>
-
-                  <br>
+                <div id="seats-free"></div> <br>
 
                 <!-- This is the estimated waiting time -->
 
@@ -80,8 +69,6 @@
                           #queue-time {
                             text-align: center;
                           }
-                        </style>
-                        <style>
                           #queue-size {
                             text-align: center;
                           }
@@ -124,11 +111,13 @@
         .then(response => response.json())
         .then(data => {
 
-          // Hier werden die Daten zu Wartezeit und Warteschlangengröße gefetcht
-          let queueTime = data.estimatedQueueTimeInMin;
-          document.getElementById("queue-time").innerHTML = `Vorraussichtliche Wartezeit: ${queueTime} minuten`;
+          // Hier werden die Daten zu Mensaplätze, Wartezeit und Warteschlangengröße gefetcht
+          let currentVisitorCount = data.currentVisitorCount;
+          document.getElementById("seats-free").innerHTML = `In der Mensa: ${currentVisitorCount}`;
+          let queueTime = parseFloat(data.estimatedQueueTimeInMin).toFixed(2);
+          document.getElementById("queue-time").innerHTML = `Vorraussichtliche Wartezeit: ${queueTime} min`;
           let queueSize = data.currentQueueSize;
-          document.getElementById("queue-size").innerHTML = `Derzeite Warteschlangengröße: ${queueSize} minuten`;
+          document.getElementById("queue-size").innerHTML = `Derzeite Warteschlangengröße: ${queueSize}`;
 
           // Hier wird das Thermometer erstellt
           if (data.currentVisitorCount <= maxCapacity * 0.25) {
