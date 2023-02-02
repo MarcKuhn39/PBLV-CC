@@ -280,7 +280,8 @@ class Core(threading.Thread):
 
         The counter value will not be decremented when the minimum number of customers is reached.
         """
-        self.current_counter = max(COUNTER_LIMIT_MIN, self.current_counter - 1)
+        self.current_counter = max(
+            self.current_queue_size, self.current_counter - 1)
 
     def decrement_queue(self):
         """Decrements the counter for the number of customers inside the queue.
