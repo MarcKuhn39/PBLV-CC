@@ -22,7 +22,8 @@ COUNTER_LIMIT_MAX = 400
 
 AVG_CUSTOMER_COUNT = 10
 
-WEEKDAY = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+WEEKDAY = ("monday", "tuesday", "wednesday",
+           "thursday", "friday", "saturday", "sunday")
 
 ARDUINO_PORT = "ARDUINO_PORT"
 
@@ -95,6 +96,7 @@ class Core(threading.Thread):
         When stopped through an event, the core starts updating the weekly and daily values,
         as well as resetting its own state to start receiving events for the next day.
         """
+        rem = self.ser.readline()
         while True:
             # start write for current day
             self.write_current_counter()
@@ -143,7 +145,8 @@ class Core(threading.Thread):
         ]
 
         # find number of customers at the end of 30 minute timerange
-        timerange = pd.date_range(start="11:00:00", end="14:00:00", freq="30min")
+        timerange = pd.date_range(
+            start="11:00:00", end="14:00:00", freq="30min")
         current_values = (
             current_values.groupby(pd.Grouper(key="time", freq="30min")).aggregate(
                 customers_per_timespan
@@ -165,7 +168,8 @@ class Core(threading.Thread):
 
         # add current values to old values by building new average
         new_day_count = old_day_count + 1
-        new_values = old_values.add(current_values, fill_value=0).div(new_day_count)
+        new_values = old_values.add(
+            current_values, fill_value=0).div(new_day_count)
         new_values.insert(loc=0, column="day", value=new_day_count)
         new_values.to_csv(DAILY_FILE_PATH, index=False)
 
@@ -303,19 +307,21 @@ class Core(threading.Thread):
         # old queue size
         old_queue_size = self.current_queue_size + 1
         # extract port 0 and port 1 events from self.events
-        port0_events = [event[0] for event in reversed(self.events) if event[1] == 0]
-        port1_events = [event[0] for event in reversed(self.events) if event[1] == 1]
+        port0_events = [event[0]
+                        for event in reversed(self.events) if event[1] == 0]
+        port1_events = [event[0]
+                        for event in reversed(self.events) if event[1] == 1]
 
         # collect combined end and begin time deltas
         time_deltas = []
         actual_person_count = 0
         for i in range(person_count):
-            if i >= len(port1_events) or i + old_queue_size + 1 >= len(port0_events):
+            if i >= len(port1_events) or i + old_queue_size >= len(port0_events):
                 break
             actual_person_count += 1
             end_time = datetime.datetime.strptime(port1_events[i], FMT)
             begin_time = datetime.datetime.strptime(
-                port0_events[i + old_queue_size + 1], FMT
+                port0_events[i + old_queue_size], FMT
             )
             time_deltas.append((end_time - begin_time).seconds)
         if actual_person_count == 0:
