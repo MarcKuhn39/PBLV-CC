@@ -18,6 +18,7 @@ void setup()
     pinMode(A5, INPUT);
     pinMode(A1, INPUT);
     pinMode(A2, INPUT);
+    pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(9600);
 }
 
@@ -47,6 +48,9 @@ void notifySerial(int PORT)
 
 void processPin(int time, int LPORT, int PPORT)
 {
+    if(time - lastSets[LPORT] > TIME_THRESHHOLD / 2 ){
+      digitalWrite(LED_BUILTIN, LOW);
+    }
     if (time - lastSets[LPORT] > TIME_THRESHHOLD)
     {
         newValues[LPORT] = mapToThreshold(analogRead(PPORT));
@@ -58,5 +62,6 @@ void processPin(int time, int LPORT, int PPORT)
             notifySerial(LPORT);
         oldValues[LPORT] = newValues[LPORT];
         lastSets[LPORT] = time;
+        digitalWrite(LED_BUILTIN, HIGH);
     }
 }
