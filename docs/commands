@@ -1,0 +1,5 @@
+sudo chmod a+rw /dev/ttyACM0
+
+cd backend
+
+python3 app.py & python3 core.py
